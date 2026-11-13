@@ -1,0 +1,799 @@
+algorithms:
+  # ---------------------------------------------------------------
+  - id: clustering-kmeans
+    name: Customer Clustering (KMeans)
+    product_id: customer-clustering
+    status: "Produção"
+    phase: sustain
+    last_run: "Mensal"
+    last_training: "Não disponível"
+
+    functional:
+      problem_solved: >-
+        Segmenta os PDVs em grupos comportamentais homogêneos a partir de
+        vendas, recência, canal digital, inovação e afinidade de marca.
+      decision_supported: >-
+        Qual persona/cluster representa este PDV, para orientar tom e
+        ambição de campanhas comerciais.
+      users: [CRM, Trade Marketing, Marketing, Sales]
+      granularity: "PDV (customer_id)"
+      update_frequency: "Mensal"
+      plain_explanation: >-
+        O modelo agrupa PDVs parecidos entre si (em vendas, frequência de
+        pedido, uso do canal digital e abertura a inovação) em 5 clusters,
+        e dá um nome de persona a cada grupo para facilitar a comunicação
+        com o negócio.
+      known_limitations: >-
+        K fixado em 5 por decisão conjunta negócio/DS — não se adapta
+        automaticamente caso o comportamento dos PDVs mude de forma
+        estrutural; depende de retraining programado para refletir novas
+        tendências.
+
+    technical:
+      pipeline: "Feature Store → Preparação e tratamento de outliers → PCA (90% variância) → KMeans (k=5) → Classificação de novos PDVs (Regressão Logística) → Tabela de output"
+      model: "KMeans (clusterização original) + Regressão Logística Multinomial (classificação de novos PDVs — modelo Champion)"
+      target: "Atribuição de cluster (1 a 5)"
+      observation_window: "12 meses"
+      prediction_window: "Não aplicável (classificação, não previsão temporal)"
+      main_features:
+        - "TotSales12m — Total de Vendas (12 meses)"
+        - "NPedidos12m — Número de Pedidos (12 meses)"
+        - "AvgSales12m — Ticket Médio (12 meses)"
+        - "RecenPep — Recência de Compra PepsiCo"
+        - "RecenBees — Recência no Bees"
+        - "PercNSalesBees12m — % de Vendas via Bees"
+        - "QtdInov12 / PenInov12 — Quantidade e Penetração de Inovação"
+        - "VolMarcaFam_[Marca]12m — Afinidade por família de marca"
+      validation_strategy: "Não disponível"
+      calibration_method: "Escalonamento via StandardScaler (média 0, variância 1)"
+      postprocessing_rules: "Filtro de variância constante (threshold 0.8) e redutor de colinearidade (Pearson > 0.7)"
+      retraining_frequency: "Não disponível"
+
+    output_table:
+      name: "cust_cluster_classification_snapshot / history"
+      unity_catalog_path: "uc_dev_latam_mdip_01.dev_pbf_digitalsales_datascience_sandbox.cust_cluster_classification_snapshot"
+      columns:
+        - {name: customer_id, type: string, description: "Identificador do PDV", example: "PDV_000123"}
+        - {name: cluster, type: int, description: "Cluster atribuído (1-5)", example: "3"}
+        - {name: persona_name, type: string, description: "Nome da persona do cluster", example: "Túlio"}
+        - {name: reference_date, type: date, description: "Data de referência do snapshot", example: "2026-11-01"}
+        - {name: model_version, type: string, description: "Versão do modelo", example: "v2.5"}
+
+    technical_metrics:
+      model_performance:
+        - "Algoritmo de clusterização: KMeans, k=5"
+        - "Algoritmo de classificação: Regressão Logística Multinomial"
+      coverage: "Não disponível neste documento"
+      operational_quality: "Pipeline mensal via Databricks; artefatos versionados no Unity Catalog"
+      drift_stability: "Não disponível neste documento"
+
+    business_value:
+      note: >-
+        Ver resultados consolidados do piloto CC V2 (Fev-Abr 2026) na tela
+        de Visão Geral — métricas de VMD, adoção digital e tarefas
+        efetivadas vs. grupo controle.
+      metrics: ["Net Sales incremental", "VMD vs. controle", "Adoção digital", "Tarefas efetivadas"]
+
+  # ---------------------------------------------------------------
+  - id: classification-logreg
+    name: Customer Classification (Regressão Logística)
+    product_id: customer-clustering
+    status: "Produção"
+    phase: sustain
+    last_run: "Mensal"
+    last_training: "Não disponível"
+
+    functional:
+      problem_solved: >-
+        Classifica novos PDVs (ou PDVs sem cluster vigente) em um dos 5
+        clusters definidos pelo modelo de clusterização original, sem
+        precisar reprocessar o KMeans completo.
+      decision_supported: "Em qual persona/cluster se encaixa um PDV novo ou recém-atualizado."
+      users: [CRM, Trade Marketing, Marketing]
+      granularity: "PDV (customer_id)"
+      update_frequency: "Mensal"
+      plain_explanation: >-
+        Depois que o KMeans "aprende" os 5 grupos, este modelo mais simples
+        decide rapidamente em qual grupo um PDV novo se encaixa, sem
+        precisar re-rodar a clusterização inteira todo mês.
+      known_limitations: >-
+        Modelo Champion fixado como Regressão Logística — decisão de
+        governança prioriza transparência/velocidade sobre precisão
+        marginal de alternativas mais complexas.
+
+    technical:
+      pipeline: "Feature Store tratada → Modelo de Classificação (Regressão Logística) → Predição de cluster → Tabela de output"
+      model: "Regressão Logística Multinomial (Champion)"
+      target: "Cluster (1 a 5)"
+      observation_window: "12 meses"
+      prediction_window: "Não aplicável"
+      main_features: ["Mesmas features do Customer Clustering (ver clustering-kmeans)"]
+      validation_strategy: "Não disponível"
+      calibration_method: "StandardScaler"
+      postprocessing_rules: "Linhagem imutável com a Feature Store via FeatureLookup"
+      retraining_frequency: "Não disponível"
+
+    output_table:
+      name: "ml_model_customer_classification (artefato)"
+      unity_catalog_path: "uc_dev_latam_mdip_01.dev_pbf_digitalsales_datascience_sandbox.ml_model_customer_classification"
+      columns:
+        - {name: customer_id, type: string, description: "Identificador do PDV", example: "PDV_000456"}
+        - {name: predicted_cluster, type: int, description: "Cluster predito", example: "2"}
+        - {name: execution_timestamp, type: timestamp, description: "Data e hora da execução", example: "2026-11-01 06:00:00"}
+
+    technical_metrics:
+      model_performance: ["Não disponível neste documento"]
+      coverage: "Não disponível neste documento"
+      operational_quality: "Código produtivo em módulos .py, seguindo princípios de IA Responsável da PepsiCo"
+      drift_stability: "Não disponível neste documento"
+
+    business_value:
+      note: "Ver resultados consolidados do piloto CC V2 na tela de Visão Geral."
+      metrics: ["Net Sales incremental", "Produtividade"]
+
+  # ---------------------------------------------------------------
+  - id: affinity-score-svd
+    name: Affinity Score (SVD)
+    product_id: portfolio-segmentation
+    status: "PoC"
+    phase: poc
+    last_run: "Não disponível"
+    last_training: "Não disponível"
+
+    functional:
+      problem_solved: "Estima quão aderente um SKU é ao perfil de compra histórico de um PDV."
+      decision_supported: "Quais produtos recomendar para expansão de mix em cada PDV."
+      users: [Trade, Growth, Digital Sales]
+      granularity: "Cliente-Produto (ProductCombinedCode)"
+      update_frequency: "Não disponível"
+      plain_explanation: >-
+        O modelo resume o comportamento de compra de cada PDV em um
+        "vetor" numérico (embedding), que é comparado com vetores de
+        produtos para estimar a afinidade — sem depender de regras de
+        associação tradicionais, que não escalam para 192 mil PDVs.
+      known_limitations: >-
+        Treinado exclusivamente no recorte Business Unit = Salty,
+        ProductCategory IN (Elma, Lucky), IsActive = True — não cobre
+        outras unidades de negócio nesta versão.
+
+    technical:
+      pipeline: "Feature Store → Filtro (Salty / Elma, Lucky / ativos) → Fatoração de Matrizes (SVD) → Embeddings de produto → Camada 2 (Propensity Score)"
+      model: "SVD 3.3 (Singular Value Decomposition) — modelo campeão"
+      target: "Score de afinidade cliente-produto"
+      observation_window: "Não disponível"
+      prediction_window: "Não aplicável"
+      main_features:
+        - "ProductCombinedCode (produto agrupado, não SKU — neutraliza mudanças de gramatura/PackPricing)"
+        - "Volume de compra (não binário — captura intensidade da preferência)"
+      validation_strategy: "Comparação entre SVD 3.3, ALS 5.2 e NMF 4.2"
+      calibration_method: "Não disponível"
+      postprocessing_rules: "Embeddings salvos como entrada estável para o modelo de propensão (Camada 2)"
+      retraining_frequency: "Não disponível"
+
+    output_table:
+      name: "df_recommendations / df_aff_label / df_rank"
+      unity_catalog_path: "Não disponível neste documento"
+      columns:
+        - {name: customer_id, type: string, description: "Identificador do PDV", example: "PDV_000789"}
+        - {name: product_combined_code, type: string, description: "Produto agrupado", example: "DORITOS_NACHO_GRP"}
+        - {name: affinity_score, type: decimal, description: "Score estimado de afinidade", example: "0.87"}
+        - {name: rank, type: int, description: "Posição no ranking de recomendação", example: "3"}
+
+    technical_metrics:
+      model_performance:
+        - "Precision@10: 93,89%"
+        - "RMSE: 2,71%"
+        - "nDCG@10: 98,52%"
+      coverage: "Treinado sobre 192 mil PDVs, 138 produtos agrupados"
+      operational_quality: "Implementação em Spark, otimizada para esparsidade de matriz"
+      drift_stability: "Não disponível neste documento"
+
+    business_value:
+      note: "Compõe o Priority Score junto com o Propensity Score."
+      metrics: ["Net Sales incremental", "Penetração de portfólio", "Completude de ofertas"]
+
+  # ---------------------------------------------------------------
+  - id: propensity-score-tree
+    name: Propensity Score (Árvore de Decisão)
+    product_id: portfolio-segmentation
+    status: "Experimentação"
+    phase: poc
+    last_run: "Não disponível"
+    last_training: "Não disponível"
+
+    functional:
+      problem_solved: >-
+        Estima a probabilidade de um PDV comprar um determinado produto no
+        próximo período.
+      decision_supported: >-
+        Priorizar oportunidades comerciais por par cliente-produto e
+        evitar ruptura de portfólio.
+      users: [Trade, Digital Sales, Growth]
+      granularity: "Cliente-Produto"
+      update_frequency: "Não disponível"
+      plain_explanation: >-
+        O modelo aprende, a partir do histórico de compras, qual a chance
+        de cada PDV comprar cada produto — e explica essa chance de forma
+        transparente (é uma árvore de decisão, não uma "caixa-preta"),
+        o que facilita auditoria por Marketing e Vendas.
+      known_limitations: >-
+        Prioriza Recall (capturar o máximo de potencial de venda) em vez
+        de Precisão máxima — de cada 3 sugestões, 2 têm alta probabilidade
+        de fechamento imediato, mas a terceira pode não converter.
+
+    technical:
+      pipeline: "Feature Store → Tratamento de missings e outliers (capping 1%-99%) → RFE / filtro de colinearidade (>0.9) → Balanceamento de classes → Árvore de Decisão → Score final"
+      model: "Decision Tree (experimento 2.3 — script v2.3), comparado contra Logistic Regression e Random Forest"
+      target: "Probabilidade de compra (0-1) de um SKU por um PDV"
+      observation_window: "Até 365 dias (janela de recência)"
+      prediction_window: "Próximo período (não especificado em dias neste documento)"
+      main_features:
+        - "RecenciaProduto (recência de compra do produto)"
+        - "NetSales / NetSalesProduto"
+        - "Cluster (CC V2) e BairroCode"
+      validation_strategy: "Mais de 23 milhões de modelos customizados (combinação PDV x Produto), métricas médias por experimento"
+      calibration_method: "Não disponível"
+      postprocessing_rules: >-
+        Missings de variáveis transacionais tratados como valor máximo da
+        janela (nunca comprou); missings categóricos rotulados como
+        "Desconhecido"
+      retraining_frequency: "Não disponível"
+
+    output_table:
+      name: "df_propensity_score"
+      unity_catalog_path: "Não disponível neste documento"
+      columns:
+        - {name: customer_id, type: string, description: "Identificador do PDV", example: "PDV_001122"}
+        - {name: propensity_score, type: decimal, description: "Probabilidade estimada de compra", example: "0.74"}
+        - {name: propensity_decile, type: int, description: "Decil do score", example: "9"}
+        - {name: action_priority, type: string, description: "Prioridade de ação comercial", example: "Prioridade Máxima (Hot Lead)"}
+
+    technical_metrics:
+      model_performance:
+        - "ROC-AUC: 80,00% (experimento 2.3, selecionado)"
+        - "F1-Score: 69,00%"
+        - "Precisão: 66,00%"
+        - "Recall: 73,00%"
+        - "Acurácia: 73,00%"
+      coverage: "Scoring individual para 233 mil PDVs"
+      operational_quality: "Árvore de decisão escolhida por menor custo de DBU/tempo de inferência vs. Random Forest"
+      drift_stability: "Não disponível neste documento"
+
+    business_value:
+      note: "Compõe o Priority Score e alimenta diretamente o Portfólio Prioritário (Tasks)."
+      metrics: ["Net Sales incremental", "Penetração de portfólio", "Conversão"]
+
+  # ---------------------------------------------------------------
+  - id: product-quantity
+    name: Product Quantity (Quantidade Ideal)
+    product_id: portfolio-segmentation
+    status: "Test/Application · Sustain"
+    phase: sustain
+    last_run: "Não disponível"
+    last_training: "Não disponível"
+
+    functional:
+      problem_solved: >-
+        Estima a quantidade ideal de um produto a ser recomendada para um
+        PDV em cada pedido.
+      decision_supported: >-
+        Qual quantidade sugerir por SKU por PDV, evitando ruptura e excesso
+        de estoque.
+      users: [Trade, Growth, Digital Sales]
+      granularity: "Cliente-Produto"
+      update_frequency: "Não disponível neste documento"
+      plain_explanation: >-
+        Além de saber se um PDV vai comprar um produto (Propensity) e se
+        ele combina com o perfil do PDV (Affinity), este modelo estima
+        quanto desse produto faz sentido recomendar, com base no histórico
+        de consumo do PDV.
+      known_limitations: "Não disponível neste documento."
+
+    technical:
+      pipeline: "Feature Store → Modelo de Quantidade Ideal → Score final por cliente-produto"
+      model: "Não disponível neste documento"
+      target: "Quantidade recomendada por cliente-produto"
+      observation_window: "Não disponível"
+      prediction_window: "Não disponível"
+      main_features: ["Não disponível neste documento"]
+      validation_strategy: "Não disponível neste documento"
+      calibration_method: "Não disponível"
+      postprocessing_rules: "Não disponível"
+      retraining_frequency: "Não disponível"
+
+    output_table:
+      name: "Não disponível neste documento"
+      unity_catalog_path: "Não disponível"
+      columns: []
+
+    technical_metrics:
+      model_performance: ["Não disponível neste documento"]
+      coverage: "Não disponível neste documento"
+      operational_quality: "Não disponível neste documento"
+      drift_stability: "Não disponível neste documento"
+
+    business_value:
+      note: "Compõe a recomendação de quantidade do Portfolio Segmentation, consumida pelo Suggested Order."
+      metrics: ["Net Sales incremental", "Completude de ofertas"]
+
+  # ---------------------------------------------------------------
+  - id: quantity-bands
+    name: Quantity Bands (Faixas de Quantidade)
+    product_id: portfolio-segmentation
+    status: "Test/Application · Sustain"
+    phase: sustain
+    last_run: "Não disponível"
+    last_training: "Não disponível"
+
+    functional:
+      problem_solved: >-
+        Classifica a quantidade recomendada de um produto em faixas
+        operacionais, para facilitar a comunicação e execução comercial.
+      decision_supported: "Em qual faixa de volume posicionar a oferta para um PDV."
+      users: [Trade, Growth]
+      granularity: "Cliente-Produto"
+      update_frequency: "Não disponível neste documento"
+      plain_explanation: >-
+        Em vez de comunicar uma quantidade exata e pouco prática (ex: "8,3
+        unidades"), este modelo agrupa a recomendação em faixas simples
+        (ex: baixa, média, alta), mais fáceis de usar no dia a dia do
+        vendedor.
+      known_limitations: "Não disponível neste documento."
+
+    technical:
+      pipeline: "Product Quantity → Discretização em faixas → Quantity Bands"
+      model: "Não disponível neste documento"
+      target: "Faixa de quantidade (categórica)"
+      observation_window: "Não disponível"
+      prediction_window: "Não disponível"
+      main_features: ["Quantidade recomendada (Product Quantity)"]
+      validation_strategy: "Não disponível neste documento"
+      calibration_method: "Não disponível"
+      postprocessing_rules: "Não disponível"
+      retraining_frequency: "Não disponível"
+
+    output_table:
+      name: "Não disponível neste documento"
+      unity_catalog_path: "Não disponível"
+      columns: []
+
+    technical_metrics:
+      model_performance: ["Não disponível neste documento"]
+      coverage: "Não disponível neste documento"
+      operational_quality: "Não disponível neste documento"
+      drift_stability: "Não disponível neste documento"
+
+    business_value:
+      note: "Facilita a comunicação comercial da quantidade recomendada, usada no Suggested Order e no dashboard de Sales Intelligence."
+      metrics: ["Completude de ofertas", "Produtividade"]
+
+  # ---------------------------------------------------------------
+  - id: goals-potential-model
+    name: Modelo de Potencial de PDV (Build-up Bottom-up)
+    product_id: target-intelligence
+    status: "Discovery — hipótese em backtest (H1)"
+    phase: discovery
+    last_run: "Não disponível (ainda não produtivo)"
+    last_training: "Não disponível"
+
+    functional:
+      problem_solved: >-
+        Hoje o split de metas comerciais é calculado por média simples e
+        distribuído manualmente via planilhas, com atrasos recorrentes e
+        baixa acurácia para rotas voláteis ou novas.
+      decision_supported: >-
+        Qual meta de venda atribuir a cada PDV/rota, a partir do potencial
+        real de compra, em vez de uma distribuição top-down genérica.
+      users: ["Gestor DTS", "Vendedor DTS/OT", "Time de Sales Intelligence"]
+      granularity: "PDV / Rota"
+      update_frequency: "Ciclo de cascateamento (OT: 6 meses | DTS: 3 meses + sazonalidade 70/30)"
+      plain_explanation: >-
+        Em vez de dividir a meta da empresa igualmente entre os vendedores
+        (de cima para baixo), o modelo olha o potencial real de cada PDV
+        (histórico, cluster, comportamento) e monta a meta de baixo para
+        cima — de forma que ela reflita melhor a realidade de cada rota.
+      known_limitations: >-
+        V1 explicitamente NÃO automatiza o processo de cascateamento atual
+        — roda em paralelo (champion-challenger) ao processo manual
+        existente, sem substituí-lo ainda.
+
+    technical:
+      pipeline: "Data Contracts (schema+owner+SLA por fonte) → Modelo ARIMA/SARIMA (hipótese H1) → Cold start via cluster CC V2 → Explicabilidade (XAI) → Meta por rota"
+      model: "ARIMA/SARIMA em backtest contra média simples (modelo atual) — hipótese H1, decisão go/no-go em Set/2026"
+      target: "Meta de venda (volume/NS) por PDV ou rota"
+      observation_window: "Backtest retroativo de 6 meses"
+      prediction_window: "Próximo ciclo de cascateamento"
+      main_features: ["Histórico de venda por rota", "Cluster CC V2 (para cold start de rotas sem histórico)"]
+      validation_strategy: "Backtest retroativo de 6 meses comparando ARIMA/SARIMA vs. média simples"
+      calibration_method: "Não disponível"
+      postprocessing_rules: "Relatório de explicabilidade (XAI) por rota — após modelo estável"
+      retraining_frequency: "Não disponível"
+
+    output_table:
+      name: "Tabela de metas (exemplo de schema)"
+      unity_catalog_path: "Não disponível neste documento"
+      columns:
+        - {name: COD_DIV, type: string, description: "Código da divisão", example: "DIV_01"}
+        - {name: COD_EQ, type: string, description: "Código da equipe/rota", example: "EQ_1234"}
+        - {name: CLASSE_CLIENTE, type: string, description: "Classe do cliente", example: "A"}
+        - {name: SUBMARCA, type: string, description: "Submarca", example: "ELMA"}
+        - {name: META_VOL_GROSS, type: decimal, description: "Meta de volume bruto", example: "1250.0"}
+        - {name: META_NS_NET, type: decimal, description: "Meta de Net Sales líquido", example: "48500.00"}
+
+    technical_metrics:
+      model_performance: ["Baseline de MAPE ainda não medido — ação pendente antes do backtest"]
+      coverage: "Não disponível (pré-piloto)"
+      operational_quality: "0% das cargas com validação automática hoje — meta é chegar a 100% (Data Contracts)"
+      drift_stability: "Não aplicável (modelo ainda não produtivo)"
+
+    business_value:
+      note: >-
+        V1 é champion-challenger, não substituição — valor medido por
+        comparação de remuneração variável e SLA de publicação.
+      metrics: ["SLA de publicação (dias úteis)", "MAPE por rota", "% de vendedores com remuneração igual/superior ao modelo atual"]
+
+  # ---------------------------------------------------------------
+  - id: portfolio-prioritario-score
+    name: Portfólio Prioritário (Score Composto)
+    product_id: portfolio-prioritario
+    status: "Piloto — correção em curso"
+    phase: pilot
+    last_run: "Não disponível"
+    last_training: "Não disponível"
+
+    functional:
+      problem_solved: >-
+        Define, para cada PDV, quais produtos e em qual ordem devem ser
+        ofertados pelo vendedor, combinando momentum de venda, afinidade e
+        propensão em um único ranking.
+      decision_supported: "Quais ofertas e tasks distribuir a cada vendedor, por PDV."
+      users: [Sales, Trade, DTS]
+      granularity: "PDV x Produto"
+      update_frequency: "Não disponível"
+      plain_explanation: >-
+        O modelo soma três sinais — se o produto está em alta recente
+        (Momentum), se combina com o perfil do PDV (Affinity) e se há
+        chance real de compra (Propensity) — para montar uma lista
+        ordenada de até 20 produtos por PDV, evitando repetir demais a
+        mesma marca nas primeiras posições.
+      known_limitations: >-
+        Na validação mais recente, o Momentum tinha 0% de cobertura por um
+        bug de join (ProductFk usado como se fosse ProductCode) — correção
+        é pré-requisito para o piloto 100% algorítmico ser válido.
+
+    technical:
+      pipeline: "salespbf + products + affinity_score_predictions → Join de Momentum (via ProductCode) → Score_Base + Affinity + PropensityScore → Agregação por marca (top 20) → Fallbacks (quantidade/desconto/dificuldade) → portfolio_prioritario_score"
+      model: "Score composto (Momentum + Affinity Score + Propensity Score), não um único modelo de ML"
+      target: "Ranking de até 20 produtos por PDV (priority_rank)"
+      observation_window: "Não disponível"
+      prediction_window: "Não disponível"
+      main_features: ["Momentum (via ProductCode)", "Affinity Score (de PS 2.2)", "PropensityScore (de PS 2.1)"]
+      validation_strategy: "Check de cobertura do join (meta ≥ 90% dos ProductCode)"
+      calibration_method: >-
+        Fallback por bin de afinidade: quantidade ausente = baseline 5;
+        desconto e dificuldade ausentes = derivados de 5 bins de afinidade
+        do PDV (maior afinidade → menor desconto/dificuldade)
+      postprocessing_rules: >-
+        Mesma marca em posições 1-12 é agregada (nome concatenado,
+        quantidade somada); marca pode reaparecer no máximo 1x adicional
+        nas posições 13-20
+      retraining_frequency: "Não disponível"
+
+    output_table:
+      name: "portfolio_prioritario_score / algotasking_portfolio_model"
+      unity_catalog_path: "Não disponível neste documento"
+      columns:
+        - {name: vendor_account_id, type: string, description: "Identificador do vendedor", example: "VEND_0456"}
+        - {name: sku, type: string, description: "Produto recomendado", example: "CEBOLITOS 90G"}
+        - {name: priority_rank, type: int, description: "Posição no ranking (1-20)", example: "4"}
+        - {name: qty_recommended, type: decimal, description: "Quantidade recomendada", example: "12.0"}
+        - {name: revenue_recommended, type: decimal, description: "Receita recomendada", example: "187.50"}
+        - {name: Score_Base, type: decimal, description: "Score base do ranking", example: "0.81"}
+
+    technical_metrics:
+      model_performance: ["Cobertura do join de Momentum: meta ≥ 90% (0% na última validação, correção em curso)"]
+      coverage: "Piloto cobre 50% da base de clientes de Sorocaba ou Campinas (SPDTS2)"
+      operational_quality: "Piloto rígido: nenhum ajuste manual de input durante a execução (1-2 meses)"
+      drift_stability: "Não disponível neste documento"
+
+    business_value:
+      note: >-
+        Piloto 100% algorítmico mede se o produto de ML sozinho atinge a
+        finalidade para a qual foi desenhado, comparado a grupo controle.
+      metrics: ["Efetividade de tasks", "Net Sales incremental", "Volume incremental"]
+
+  # ---------------------------------------------------------------
+  - id: tasks-effectiveness
+    name: Tasks Effectiveness (Score de Efetividade)
+    product_id: tasks
+    status: "PoC"
+    phase: poc
+    last_run: "Não disponível"
+    last_training: "Não disponível"
+
+    functional:
+      problem_solved: >-
+        Hoje não há um critério sistemático para estimar o quão efetiva
+        tende a ser uma tarefa comercial antes de ela ser executada.
+      decision_supported: >-
+        Qual o score de efetividade esperado de uma tarefa, usado como
+        insumo para outros algoritmos do portfólio (ex: priorização de
+        ofertas).
+      users: [Sales, Trade, DTS]
+      granularity: "Vendedor / PDV / Tarefa"
+      update_frequency: "Não disponível neste documento"
+      plain_explanation: >-
+        Gera um score que estima a chance de uma tarefa comercial dar
+        certo, e esse score é reaproveitado por outros algoritmos do Sales
+        ADAN (não fica isolado só no produto Tasks).
+      known_limitations: >-
+        Produto em PoC — documentação técnica detalhada (features, modelo,
+        métricas) ainda não disponível nas pastas de origem consultadas.
+        Início de desenvolvimento: Nov/2026.
+
+    technical:
+      pipeline: "Não disponível neste documento — produto em PoC"
+      model: "Não disponível neste documento"
+      target: "Score de efetividade da tarefa"
+      observation_window: "Não disponível"
+      prediction_window: "Não disponível"
+      main_features: ["Não disponível neste documento"]
+      validation_strategy: "Não disponível neste documento"
+      calibration_method: "Não disponível"
+      postprocessing_rules: "Score integrado como input de outros algoritmos do portfólio (ex: Portfólio Prioritário)"
+      retraining_frequency: "Não disponível"
+
+    output_table:
+      name: "Não disponível neste documento"
+      unity_catalog_path: "Não disponível"
+      columns: []
+
+    technical_metrics:
+      model_performance: ["Não disponível neste documento — produto em PoC"]
+      coverage: "Não disponível neste documento"
+      operational_quality: "Não disponível neste documento"
+      drift_stability: "Não disponível neste documento"
+
+    business_value:
+      note: >-
+        Produto em PoC (início Nov/2026) — valor de negócio ainda não
+        mensurado.
+      metrics: ["Não disponível neste documento"]
+
+  # ---------------------------------------------------------------
+  - id: tasks-quantity
+    name: Tasks Quantity (Recomendação de Quantidade de Tarefas)
+    product_id: tasks
+    status: "PoC"
+    phase: poc
+    last_run: "Não disponível"
+    last_training: "Não disponível"
+
+    functional:
+      problem_solved: >-
+        Hoje não há um critério sistemático para definir quantas tarefas
+        comerciais um vendedor deve receber no dia/período.
+      decision_supported: >-
+        Quantas tarefas alocar a cada vendedor, para equilibrar a carga de
+        trabalho em campo.
+      users: [Sales, Trade, DTS]
+      granularity: "Vendedor / PDV"
+      update_frequency: "Não disponível neste documento"
+      plain_explanation: >-
+        Estima, para cada vendedor, quantas tarefas comerciais fazem
+        sentido no período, para não sobrecarregar nem subutilizar a rota.
+        A integração do resultado hoje é manual no BEES.
+      known_limitations: >-
+        Produto em PoC — documentação técnica detalhada (features, modelo,
+        métricas) ainda não disponível nas pastas de origem consultadas.
+        Início de desenvolvimento: Nov/2026. Integração com BEES ainda
+        manual (não automatizada).
+
+    technical:
+      pipeline: "Não disponível neste documento — produto em PoC"
+      model: "Não disponível neste documento"
+      target: "Quantidade de tarefas recomendada por vendedor/período"
+      observation_window: "Não disponível"
+      prediction_window: "Não disponível"
+      main_features: ["Não disponível neste documento"]
+      validation_strategy: "Não disponível neste documento"
+      calibration_method: "Não disponível"
+      postprocessing_rules: "Não disponível"
+      retraining_frequency: "Não disponível"
+
+    output_table:
+      name: "Não disponível neste documento"
+      unity_catalog_path: "Não disponível"
+      columns: []
+
+    technical_metrics:
+      model_performance: ["Não disponível neste documento — produto em PoC"]
+      coverage: "Não disponível neste documento"
+      operational_quality: "Integração manual no BEES — automação (\"Automação de Tasks na BEES\") prevista em Discovery, início Nov/2026"
+      drift_stability: "Não disponível neste documento"
+
+    business_value:
+      note: >-
+        Produto em PoC (início Nov/2026) — valor de negócio ainda não
+        mensurado. Referência de escopo na planilha mestre de iniciativas
+        (TK 3.1 Recomendação de Quantidade de Tarefas).
+      metrics: ["Não disponível neste documento"]
+
+  # ---------------------------------------------------------------
+  - id: cross-sell-fpgrowth
+    name: Cross-sell (FP-Growth)
+    product_id: cross-sell-intelligence
+    status: "MVP Roll-out"
+    phase: mvp
+    last_run: "Não disponível"
+    last_training: "Não disponível"
+
+    functional:
+      problem_solved: >-
+        Identificar quais marcas os clientes compram em conjunto, a partir
+        de padrões agregados de comportamento de compra (não recomendações
+        individuais por cliente).
+      decision_supported: >-
+        Quais marcas sugerir em conjunto para expansão de mix e cross-sell,
+        nacionalmente ou por estado.
+      users: [CRM, Trade, Marketing, "Growth / Analytics"]
+      granularity: "Regra de associação entre marcas (nacional ou por estado)"
+      update_frequency: "Não disponível neste documento"
+      plain_explanation: >-
+        O algoritmo analisa o "carrinho de compras" de milhares de clientes
+        e descobre padrões do tipo "quem compra a marca X também tende a
+        comprar a marca Y" — são padrões agregados de mercado, não uma
+        previsão para um cliente específico.
+      known_limitations: >-
+        Baseado em uma janela de meses recente — não captura sazonalidade
+        de longo prazo nem lançamentos novos de produto. Regras com poucos
+        clientes na base (`n_customers` baixo, especialmente em estados
+        pequenos) são estatisticamente menos robustas.
+
+    technical:
+      pipeline: "Histórico de pedidos (SAP/BEES) → Market Basket Analysis → FP-Growth → Regras de associação (nacional e por estado) → Tabelas cross_sell_br / cross_sell_states"
+      model: "FP-Growth (market basket analysis)"
+      target: "Regras de associação antecedente(s) → consequente(s), com lift > 1 (filtro aplicado na geração)"
+      observation_window: "Janela de meses recente (não especificada em dias neste documento)"
+      prediction_window: "Não aplicável (padrão agregado, não previsão individual)"
+      main_features: ["Marca(s) antecedente(s)", "Marca(s) consequente(s)", "Estado do cliente (CustomerState), na versão por estado"]
+      validation_strategy: "Não disponível neste documento"
+      calibration_method: >-
+        min_support calculado separadamente por estado (min_support_used)
+        — compensa a diferença de volume de clientes entre estados
+      postprocessing_rules: "Filtro de lift > 1 aplicado na geração dos dados (toda regra publicada já tem associação real, não coincidência)"
+      retraining_frequency: "Não disponível"
+
+    output_table:
+      name: "cross_sell_br / cross_sell_states"
+      unity_catalog_path: "uc_dev_latam_mdip_01.dev_pbf_digitalsales_datascience_sandbox.cross_sell_br"
+      columns:
+        - {name: antecedents, type: string, description: "Marca(s) de partida da regra", example: "DORITOS"}
+        - {name: consequents, type: string, description: "Marca(s) sugerida(s)", example: "RUFFLES"}
+        - {name: support, type: decimal, description: "% de clientes que compram ambos, sobre o total da base", example: "0.12"}
+        - {name: confidence, type: decimal, description: "De quem compra o antecedente, % que também compra o consequente", example: "0.91"}
+        - {name: lift, type: decimal, description: "Quanto a combinação ocorre mais do que o esperado pelo acaso (>1 = associação real)", example: "1.12"}
+        - {name: kulczynski, type: decimal, description: "Confidence corrigida para reduzir viés de marcas muito populares", example: "0.78"}
+        - {name: certainty, type: decimal, description: "Quão mais confiável a regra é do que simplesmente chutar o consequente", example: "0.55"}
+        - {name: CustomerState, type: string, description: "Estado do cliente (somente em cross_sell_states)", example: "SP"}
+        - {name: n_customers, type: int, description: "Clientes daquele estado na análise (somente em cross_sell_states) — indicador de robustez", example: "4210"}
+
+    technical_metrics:
+      model_performance:
+        - "Exemplo real: Doritos → Ruffles, confiança 91%"
+        - "Exemplo real: Cheetos → Fandangos, lift 1,12"
+        - "Toda regra publicada tem lift > 1 (filtro de geração)"
+      coverage: "Nacional (cross_sell_br) e por estado (cross_sell_states, sujeito a min_support por UF)"
+      operational_quality: "Estados sem RAC ou com poucos clientes podem não aparecer em cross_sell_states (descartados por não atingirem base mínima)"
+      drift_stability: "Não disponível neste documento"
+
+    business_value:
+      note: >-
+        Regras com n_customers baixo são menos confiáveis — sinalizar isso
+        em decisões de negócio, mesmo com lift alto.
+      metrics: ["Penetração de portfólio", "Completude de ofertas", "Expansão de mix"]
+
+  # ---------------------------------------------------------------
+  - id: sales-intelligence-consolidation
+    name: Camada de Consolidação (Dashboard 7 abas)
+    product_id: sales-intelligence
+    status: "MVP Roll-out"
+    phase: mvp
+    last_run: "Não disponível"
+    last_training: "Não aplicável (não é um modelo preditivo)"
+
+    functional:
+      problem_solved: >-
+        Hoje os outputs de Customer Clustering e Portfolio Segmentation
+        ficam dispersos em tabelas técnicas, pouco acessíveis a áreas de
+        negócio sem conhecimento de SQL.
+      decision_supported: >-
+        Preparação de visita, priorização de portfólio, segmentação de
+        campanhas — consolidado em um único dashboard.
+      users: [CRM, Trade Marketing, Digital Sales, Marketing, Sales, Growth]
+      granularity: "PDV / Cluster / UF, conforme a aba"
+      update_frequency: "Conforme atualização dos produtos de origem (mensal)"
+      plain_explanation: >-
+        É a "vitrine" onde os resultados de todos os outros modelos do
+        Sales ADAN aparecem de forma visual e navegável, sem precisar
+        consultar tabelas separadas.
+      known_limitations: >-
+        Depende da estabilidade dos dados de CC V2 — predecessor direto na
+        cadeia de dependências.
+
+    technical:
+      pipeline: "CC V2 + PS 2.1-2.4 (outputs) → Camada de consolidação → 7 abas do dashboard"
+      model: "Não aplicável — camada de apresentação/consolidação, não modelo de ML"
+      target: "Não aplicável"
+      observation_window: "Não aplicável"
+      prediction_window: "Não aplicável"
+      main_features: ["Não aplicável"]
+      validation_strategy: "Não aplicável"
+      calibration_method: "Não aplicável"
+      postprocessing_rules: "Não aplicável"
+      retraining_frequency: "Não aplicável"
+
+    output_table:
+      name: "Não aplicável — consome tabelas de CC e PS"
+      unity_catalog_path: "Não aplicável"
+      columns: []
+
+    technical_metrics:
+      model_performance: ["Não aplicável — ver métricas dos modelos de origem (CC, PS)"]
+      coverage: "Não disponível neste documento"
+      operational_quality: "Acesso via Okta; 7 abas: Portfolio Simulation, Cluster Motor, Cluster Profile, Propensity Motor, Affinity Motor, Quantity Motor, Prioritary Portfolio"
+      drift_stability: "Não aplicável"
+
+    business_value:
+      note: "Valor medido por adoção, não por acurácia de modelo."
+      metrics: ["DAU/MAU por área consumidora", "% de campanhas criadas com segmentação", "Número de áreas consumidoras ativas"]
+
+  # ---------------------------------------------------------------
+  - id: genie-assistant
+    name: Genie — Assistente Conversacional
+    product_id: sales-intelligence
+    status: "MVP Roll-out"
+    phase: mvp
+    last_run: "Não disponível"
+    last_training: "Não aplicável"
+
+    functional:
+      problem_solved: >-
+        Consultar dados do Sales ADAN exige conhecimento de SQL, o que
+        limita o uso por áreas de negócio não técnicas.
+      decision_supported: "Qualquer pergunta analítica ad-hoc sobre os dados do portfólio ADAN."
+      users: [CRM, Trade, Marketing, "Growth / Analytics"]
+      granularity: "Depende da pergunta do usuário"
+      update_frequency: "Em tempo real (consulta sob demanda)"
+      plain_explanation: >-
+        É um assistente de inteligência artificial integrado ao
+        Databricks que permite perguntar em português ou inglês sobre os
+        dados do Sales ADAN, sem precisar escrever consultas SQL.
+      known_limitations: "Não disponível neste documento."
+
+    technical:
+      pipeline: "Pergunta em linguagem natural → Genie (Databricks) → Consulta às tabelas do Unity Catalog → Resposta"
+      model: "Genie (assistente de IA do Databricks, PT/EN)"
+      target: "Não aplicável"
+      observation_window: "Não aplicável"
+      prediction_window: "Não aplicável"
+      main_features: ["Não aplicável"]
+      validation_strategy: "Não disponível neste documento"
+      calibration_method: "Não aplicável"
+      postprocessing_rules: "Não aplicável"
+      retraining_frequency: "Não aplicável"
+
+    output_table:
+      name: "Não aplicável"
+      unity_catalog_path: "Não aplicável"
+      columns: []
+
+    technical_metrics:
+      model_performance: ["Não disponível neste documento"]
+      coverage: "Não disponível neste documento"
+      operational_quality: "Não disponível neste documento"
+      drift_stability: "Não aplicável"
+
+    business_value:
+      note: "Valor medido por adoção e redução de dependência de SQL para consultas ad-hoc."
+      metrics: ["Produtividade (horas economizadas)", "Adoção do dashboard"]

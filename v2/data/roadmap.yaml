@@ -1,0 +1,311 @@
+# Fonte: dpm/inciativas ADAN/Iniciativas_Sales_ADAN_2026-2027.xlsx
+# Lista mestre de iniciativas do portfólio Sales ADAN (28 linhas).
+# product_id: referencia o produto correspondente em products.yaml, quando existir página de detalhe.
+initiatives:
+  - id: 1
+    name: Customer Clustering e Personas de PDVs
+    type: Local
+    focal_point: Victor Vidal
+    data_product_type: Advanced Analytics
+    in_edf: true
+    prioritized_in_edf: true
+    origin: Iniciativa 2026
+    duration: "2026"
+    product_id: customer-clustering
+
+  - id: 2
+    name: Portfolio Segmentation - Score de Afinidade
+    type: Local
+    focal_point: Victor Vidal
+    data_product_type: Advanced Analytics
+    in_edf: true
+    prioritized_in_edf: true
+    origin: Iniciativa 2026
+    duration: "2026"
+    product_id: portfolio-segmentation
+
+  - id: 3
+    name: Portfolio Segmentation - Score de Propensão
+    type: Local
+    focal_point: Victor Vidal
+    data_product_type: Advanced Analytics
+    in_edf: true
+    prioritized_in_edf: true
+    origin: Iniciativa 2026
+    duration: "2026"
+    product_id: portfolio-segmentation
+
+  - id: 4
+    name: Portfolio Segmentation - Modelo de Quantidade Ideal
+    type: Local
+    focal_point: Victor Vidal
+    data_product_type: Advanced Analytics
+    in_edf: true
+    prioritized_in_edf: true
+    origin: Iniciativa 2026
+    duration: "2026+2027"
+    product_id: portfolio-segmentation
+
+  - id: 5
+    name: Portfolio Segmentation - Modelo de Quantidade Adicional
+    type: Local
+    focal_point: Victor Vidal
+    data_product_type: Advanced Analytics
+    in_edf: true
+    prioritized_in_edf: true
+    origin: Iniciativa 2026
+    duration: "2026+2027"
+    product_id: portfolio-segmentation
+
+  - id: 6
+    name: Portfólio Prioritário por PDV
+    type: Local
+    focal_point: Francisco Maron
+    data_product_type: Advanced Analytics
+    in_edf: true
+    prioritized_in_edf: true
+    origin: Iniciativa 2026
+    duration: "2026"
+    product_id: portfolio-prioritario
+
+  - id: 7
+    name: Sales Intelligence V1 - Dashboard e IA Conversacional
+    type: Local
+    focal_point: Leandro Ferreira
+    data_product_type: IA
+    in_edf: true
+    prioritized_in_edf: true
+    origin: Iniciativa 2026
+    duration: "2026"
+    product_id: sales-intelligence
+
+  - id: 8
+    name: Sales Intelligence V2 - Power BI e Evolução de UX/UI
+    type: Local
+    focal_point: Leandro Ferreira
+    data_product_type: Data Viz
+    in_edf: true
+    prioritized_in_edf: true
+    origin: Iniciativa 2026
+    duration: "2026+2027"
+    product_id: sales-intelligence
+
+  - id: 9
+    name: Sales Intelligence - Interface Conversacional Genie
+    type: Local
+    focal_point: Leandro Ferreira
+    data_product_type: IA
+    in_edf: true
+    prioritized_in_edf: true
+    origin: Iniciativa 2026
+    duration: "2026+2027"
+    product_id: sales-intelligence
+
+  - id: 10
+    name: Sales Intelligence - Aplicação Web HTML Escalável
+    type: Local
+    focal_point: Leandro Ferreira
+    data_product_type: IA
+    in_edf: true
+    prioritized_in_edf: false
+    origin: Nova iniciativa
+    duration: "2027"
+    product_id: null
+
+  - id: 11
+    name: Tasks - Recomendação de Quantidade de Tarefas
+    type: Local
+    focal_point: Leandro Ferreira
+    data_product_type: Advanced Analytics
+    in_edf: true
+    prioritized_in_edf: true
+    origin: Iniciativa 2026
+    duration: "2026"
+    product_id: tasks
+
+  - id: 12
+    name: Tasks - Score de Dificuldade
+    type: Local
+    focal_point: Leandro Ferreira
+    data_product_type: Advanced Analytics
+    in_edf: true
+    prioritized_in_edf: true
+    origin: Iniciativa 2026
+    duration: "2026"
+    product_id: tasks
+
+  - id: 13
+    name: Tasks - Alocação e Priorização por PDV
+    type: Local
+    focal_point: Leandro Ferreira
+    data_product_type: Advanced Analytics
+    in_edf: true
+    prioritized_in_edf: true
+    origin: Iniciativa 2026
+    duration: "2026+2027"
+    product_id: portfolio-prioritario
+
+  - id: 14
+    name: Tasks - Integração e Publicação no BEES Force/Biz
+    type: Local
+    focal_point: Leandro Ferreira
+    data_product_type: EDF
+    in_edf: true
+    prioritized_in_edf: true
+    origin: Iniciativa 2026
+    duration: "2026+2027"
+    product_id: portfolio-prioritario
+
+  - id: 15
+    name: Suggested Order - Jornada do Cliente
+    type: Local
+    focal_point: Leandro Ferreira
+    data_product_type: Advanced Analytics
+    in_edf: true
+    prioritized_in_edf: true
+    origin: Iniciativa 2026
+    duration: "2026+2027"
+    product_id: null
+
+  - id: 16
+    name: Suggested Order - Jornada do Vendedor
+    type: Local
+    focal_point: Leandro Ferreira
+    data_product_type: Advanced Analytics
+    in_edf: true
+    prioritized_in_edf: true
+    origin: Iniciativa 2026
+    duration: "2026+2027"
+    product_id: null
+
+  - id: 17
+    name: Simulador de Metas Comerciais Hiperpersonalizadas
+    type: Local
+    focal_point: Leandro Ferreira
+    data_product_type: Advanced Analytics
+    in_edf: true
+    prioritized_in_edf: true
+    origin: Iniciativa 2026
+    duration: "2026+2027"
+    product_id: target-intelligence
+
+  - id: 18
+    name: Discount Band - Faixa de Desconto Ideal
+    type: Local
+    focal_point: Leandro Ferreira
+    data_product_type: Advanced Analytics
+    in_edf: true
+    prioritized_in_edf: false
+    origin: Iniciativa 2026
+    duration: "2027"
+    product_id: null
+
+  - id: 19
+    name: Frontline Clustering - Segmentação de Vendedores
+    type: Local
+    focal_point: Leandro Ferreira
+    data_product_type: Advanced Analytics
+    in_edf: true
+    prioritized_in_edf: false
+    origin: Nova iniciativa
+    duration: "2027"
+    product_id: null
+
+  - id: 20
+    name: Route Optimization - Otimização de Rotas
+    type: Local
+    focal_point: Leandro Ferreira
+    data_product_type: Advanced Analytics
+    in_edf: true
+    prioritized_in_edf: false
+    origin: Iniciativa 2026
+    duration: "2027"
+    product_id: null
+
+  - id: 21
+    name: Van Load Optimization - Carregamento de Van Sales
+    type: Local
+    focal_point: Leandro Ferreira
+    data_product_type: Advanced Analytics
+    in_edf: true
+    prioritized_in_edf: false
+    origin: Nova iniciativa
+    duration: "2027"
+    product_id: null
+
+  - id: 22
+    name: Expansão dos Produtos Sales ADAN para OT
+    type: Local
+    focal_point: Leandro Ferreira
+    data_product_type: Advanced Analytics
+    in_edf: true
+    prioritized_in_edf: false
+    origin: Nova iniciativa
+    duration: "2027"
+    product_id: null
+
+  - id: 23
+    name: Integração IBP ADAN x Sales ADAN
+    type: Local
+    focal_point: Leandro Ferreira
+    data_product_type: Advanced Analytics
+    in_edf: true
+    prioritized_in_edf: false
+    origin: Nova iniciativa
+    duration: "2027"
+    product_id: null
+
+  - id: 24
+    name: Integração CRM x Sales ADAN para Jornadas B2B
+    type: Local
+    focal_point: Leandro Ferreira
+    data_product_type: IA
+    in_edf: true
+    prioritized_in_edf: false
+    origin: Nova iniciativa
+    duration: "2027"
+    product_id: null
+
+  - id: 25
+    name: Identificação de White Spaces de Distribuição e Sortimento
+    type: Local
+    focal_point: Leandro Ferreira
+    data_product_type: Advanced Analytics
+    in_edf: true
+    prioritized_in_edf: false
+    origin: Nova iniciativa
+    duration: "2027"
+    product_id: null
+
+  - id: 26
+    name: Score de Risco de Inatividade (Churn) de PDV
+    type: Local
+    focal_point: Leandro Ferreira
+    data_product_type: Advanced Analytics
+    in_edf: true
+    prioritized_in_edf: false
+    origin: Nova iniciativa
+    duration: "2027"
+    product_id: null
+
+  - id: 27
+    name: Loyalty - Recomendação de Quantidade de Challenges
+    type: Local
+    focal_point: Leandro Ferreira
+    data_product_type: Advanced Analytics
+    in_edf: true
+    prioritized_in_edf: false
+    origin: Nova iniciativa
+    duration: "2027"
+    product_id: null
+
+  - id: 28
+    name: Loyalty - Ranking de Challenges por Vendedor
+    type: Local
+    focal_point: Leandro Ferreira
+    data_product_type: Advanced Analytics
+    in_edf: true
+    prioritized_in_edf: false
+    origin: Nova iniciativa
+    duration: "2027"
+    product_id: null

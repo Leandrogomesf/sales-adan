@@ -1,0 +1,172 @@
+{
+  "name": "Sales ADAN",
+  "tagline": "Inteligência de dados e machine learning para orientar oportunidades, recomendações e ações comerciais nos PDVs da PepsiCo Brasil.",
+  "last_updated": "2026-11-10",
+  "objective": "Tornar o Customer Intelligence a principal fonte de inteligência comercial dos times de vendas e marketing da PepsiCo Brasil, gerando crescimento de portfólio e personalização de ações nos PDVs.",
+  "description": "O Sales ADAN transforma dados, modelos analíticos e sinais comerciais em produtos de dados consumíveis pelo negócio. A iniciativa busca identificar quem é o cliente, estimar seu potencial de compra, recomendar produtos e quantidades e direcionar a melhor ação comercial para cada PDV.",
+  "executive_cards": [
+    {
+      "label": "Objetivo",
+      "value": "Aumentar Net Sales e penetração de portfólio por meio de decisões comerciais hiperpersonalizadas"
+    },
+    {
+      "label": "Público impactado",
+      "value": "Trade, Vendas, CRM, Digital Sales, Marketing, Growth/Analytics"
+    },
+    {
+      "label": "Produtos ativos",
+      "value": "5 produtos em MVP Roll-out ou Discovery"
+    },
+    {
+      "label": "Última atualização",
+      "value": "10/11/2026"
+    }
+  ],
+  "impacted_areas": [
+    "CRM",
+    "Trade Marketing",
+    "Digital Sales",
+    "Marketing",
+    "Sales (equipe comercial)",
+    "Growth / Analytics"
+  ],
+  "team": [
+    {
+      "role": "Data Product Manager",
+      "name": "Leandro Ferreira",
+      "responsibility": "Estratégia, roadmap, valor, priorização e alinhamento com negócio"
+    },
+    {
+      "role": "Product Owner",
+      "name": "Victor Vidal",
+      "responsibility": "Regras de negócio, casos de uso e aceite funcional"
+    },
+    {
+      "role": "Data Science Lead",
+      "name": "Leonardo Damasio",
+      "responsibility": "Arquitetura analítica, qualidade e evolução dos modelos"
+    },
+    {
+      "role": "Data Scientists",
+      "name": "Ana Beatriz, Jessica Lima",
+      "responsibility": "Desenvolvimento, validação e monitoramento"
+    },
+    {
+      "role": "Business Owner",
+      "name": "Francisco (Xico)",
+      "responsibility": "Validação da estratégia e captura do valor"
+    }
+  ],
+  "pilot_results": {
+    "title": "Resultados do Piloto CC V2",
+    "reference_period": "Fevereiro a Abril de 2026",
+    "source": "sales intel/v1/OKR_Sales_Intelligence.md",
+    "note": "Indicadores de um piloto já encerrado neste período de referência — não representam resultado corrente da operação.",
+    "metrics": [
+      {
+        "name": "Crescimento de Volume (VMD) vs. controle",
+        "fev": "+17,5 p.p.",
+        "mar": "+9 p.p.",
+        "abr": "+6 p.p.",
+        "trend": "declinante"
+      },
+      {
+        "name": "Adoção Digital vs. controle",
+        "fev": "+1,5 p.p.",
+        "mar": "-1 p.p.",
+        "abr": "+1 p.p.",
+        "trend": "estável"
+      },
+      {
+        "name": "Tarefas Efetivadas vs. controle",
+        "fev": "-11 p.p.",
+        "mar": "+1,9 p.p.",
+        "abr": "+3,2 p.p.",
+        "trend": "recuperando"
+      },
+      {
+        "name": "SKUs/PDV vs. controle",
+        "fev": "+0,7",
+        "mar": "-0,7",
+        "abr": "+1,2",
+        "trend": "volátil"
+      }
+    ]
+  },
+  "okr": {
+    "problem": "Os times comerciais (CRM, Trade, Digital Sales, Marketing) tomam decisões sobre portfólio, priorização de clientes e campanhas com base em intuição, planilhas e dados fragmentados — sem uma fonte integrada de inteligência sobre o comportamento dos PDVs.",
+    "users": [
+      "Primários: CRM, Trade Marketing, Digital Sales, Marketing",
+      "Secundários: vendedores (Sales), gestores de vendas (GV)"
+    ],
+    "decisions": [
+      "Segmentação: em qual cluster está este cliente? Como ele se comporta?",
+      "Portfólio: quais produtos priorizar para este PDV, em qual volume?",
+      "Ação: qual campanha, oferta ou recomendação ativar com base no perfil?"
+    ],
+    "key_results": [
+      {
+        "kr": "% crescimento de Volume (VMD) nos PDVs ativados vs. controle",
+        "baseline": "+6 p.p. (Abr/26)",
+        "target": "≥ +10 p.p.",
+        "deadline": "Out/26"
+      },
+      {
+        "kr": "% de SKUs/PDV nos clusters ativados vs. controle",
+        "baseline": "+1,2 (Abr/26)",
+        "target": "≥ +2,0",
+        "deadline": "Out/26"
+      },
+      {
+        "kr": "Número de áreas consumidoras ativas (DAU ≥ 1x/semana)",
+        "baseline": "A definir",
+        "target": "≥ 3 áreas",
+        "deadline": "Set/26"
+      },
+      {
+        "kr": "% de campanhas CRM criadas com segmentação por cluster ou propensity",
+        "baseline": "0%",
+        "target": "≥ 30%",
+        "deadline": "Out/26"
+      }
+    ]
+  },
+  "glossary": [
+    {
+      "term": "PDV",
+      "definition": "Ponto de Venda — cliente direto da PepsiCo"
+    },
+    {
+      "term": "SKU",
+      "definition": "Unidade individual de produto"
+    },
+    {
+      "term": "VMD",
+      "definition": "Volume Médio Diário"
+    },
+    {
+      "term": "CC V2",
+      "definition": "Customer Clustering V2 — modelo de segmentação comportamental"
+    },
+    {
+      "term": "PS 2.x",
+      "definition": "Portfolio Segmentation — conjunto de modelos de propensão, afinidade e quantidade"
+    },
+    {
+      "term": "Genie",
+      "definition": "Assistente analítico do Databricks para consultas em linguagem natural"
+    },
+    {
+      "term": "BEES",
+      "definition": "Plataforma digital B2B da PepsiCo (canal de pedidos dos PDVs)"
+    },
+    {
+      "term": "OST",
+      "definition": "Opportunity Solution Tree — framework de priorização de oportunidades"
+    },
+    {
+      "term": "PUDMA",
+      "definition": "Problema · Usuário · Decisão · Métricas · Aceite — estrutura de definição do OKR"
+    }
+  ]
+}

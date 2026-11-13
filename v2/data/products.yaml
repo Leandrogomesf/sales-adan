@@ -1,0 +1,212 @@
+products:
+  - id: customer-clustering
+    name: Customer Clustering and Personas
+    code: "CC 1.0 / V2.5"
+    status: "Sustain"
+    phase: sustain
+    phase_tags: ["Test/Application"]
+    module: Cliente
+    consuming_areas: [Trade, CRM, Growth, Sales, Marketing]
+    business_owner: Victor Vidal (PO)
+    technical_owner: Data Science
+    description: >-
+      Segmenta os PDVs da PepsiCo Brasil em clusters comportamentais e
+      personas acionáveis, combinando histórico de vendas, recência, canal
+      digital, inovação e afinidade de marca.
+    business_objective: >-
+      Responder "quem são meus clientes?" para permitir ações comerciais e
+      de marketing diferenciadas por perfil de PDV, alimentando os modelos
+      de Portfolio Segmentation.
+    algorithms: [clustering-kmeans, classification-logreg]
+    tables:
+      - "Feature Store tratada (fs_cust_cluster)"
+      - "Snapshot de predições (cust_cluster_classification_snapshot)"
+      - "Histórico de predições (cust_cluster_classification_history)"
+    consumption: [Dashboard, API, BEES, Databricks SQL]
+    source_docs:
+      - "customer clustering/Documentation final/v2/Referência técnica.docx"
+      - "customer clustering/Documentation final/v1/Dicionário de Variáveis.docx"
+      - "sales intel/v1/OKR_Sales_Intelligence.md"
+
+  - id: portfolio-segmentation
+    name: Portfolio Segmentation
+    code: "PS 2.1, 2.2, 2.3, 2.4"
+    status: "Sustain"
+    phase: sustain
+    phase_tags: ["Test/Application"]
+    module: Produto
+    consuming_areas: [Trade, Growth, Digital Sales, Marketing]
+    business_owner: Victor Vidal (PO)
+    technical_owner: Data Science
+    description: >-
+      Identifica oportunidades de expansão de portfólio por cliente e
+      produto, combinando score de afinidade (SVD), score de propensão
+      (árvore de decisão), quantidade recomendada e faixas de quantidade.
+    business_objective: >-
+      Priorizar produtos com maior oportunidade de ativação ou crescimento
+      em cada PDV, alimentando Tasks e Suggested Order.
+    algorithms: [affinity-score-svd, propensity-score-tree, product-quantity, quantity-bands]
+    tables:
+      - "df_propensity_score (customer_id, propensity_score, propensity_decile, action_priority)"
+      - "df_join_store (features consolidadas por cliente-produto)"
+      - "df_recommendations / df_rank (saída de afinidade)"
+    consumption: [Databricks SQL, Dashboard, "Input para Tasks"]
+    source_docs:
+      - "portfolio_segmentation/Final documentation/AFINNITY SVD MODEL documentation v1.docx"
+      - "portfolio_segmentation/Final documentation/PROPENSITY DECISION TREE MODEL documentation v1.docx"
+      - "portfolio_segmentation/pilot_aplication/Piloto_PortfolioSegmentation_Julho2026.pdf"
+
+  - id: target-intelligence
+    name: Metas / Rotas (Target Intelligence)
+    code: "MT 8.1"
+    status: "PoC"
+    phase: poc
+    phase_tags: []
+    module: Vendedor
+    consuming_areas: [DTS, Sales Intelligence, Trade]
+    business_owner: Francisco (Xico)
+    technical_owner: Leonardo Damasio (DS Lead)
+    description: >-
+      Cálculo das metas do próximo período a partir do potencial real de
+      venda do PDV, combinando os outputs dos demais algoritmos do Sales
+      ADAN em um modelo de build-up bottom-up.
+    business_objective: >-
+      Maximizar a acurácia da distribuição de metas a partir do potencial
+      real de venda do PDV, sem penalizar a remuneração variável dos
+      vendedores nem automatizar o processo atual na v1.
+    algorithms: [goals-potential-model]
+    tables:
+      - "Tabela de metas (AGRUP, DIRETORIA, COD_DIV, META_VOL_GROSS, META_NS_NET, ...)"
+    consumption: [Databricks SQL, "Processo de cascateamento OT/DTS"]
+    source_docs:
+      - "metas/output/00_resumo_executivo.md"
+      - "metas/output/07_okr_metas_pos_reuniao.md"
+      - "metas/inputs/tabela exemplo metas.txt"
+
+  - id: portfolio-prioritario
+    name: Portfólio Prioritário para Ofertas
+    code: "PP"
+    status: "MVP"
+    phase: mvp
+    phase_tags: ["Test/Application"]
+    module: Execução
+    consuming_areas: [Sales, Trade, DTS]
+    business_owner: Francisco Maron
+    technical_owner: Data Science / MLOps
+    description: >-
+      Define, para cada PDV, o ranking de 1-10 de ofertas de produtos a
+      serem executadas pelo vendedor, combinando Momentum, Affinity Score
+      e Propensity Score em um score composto.
+    business_objective: >-
+      Direcionar a melhor ação comercial por PDV, testando em piloto 100%
+      algorítmico (sem ajuste humano) se o modelo sozinho atinge o
+      resultado esperado.
+    algorithms: [portfolio-prioritario-score]
+    tables:
+      - "portfolio_prioritario_score (score final por PDV x Produto)"
+      - "algotasking_portfolio_model (model_id, vendor_account_id, sku, priority_rank, qty_recommended)"
+    consumption: ["Input para BEES Force/Biz", "Carregamento do vendedor em campo"]
+    source_docs:
+      - "dpm/pilotos/piloto_100pc/US_piloto_100_algoritmico.md"
+      - "tasks algo 3/tabela fase 2 - algotasking_portfolio_model_v2_01.csv"
+
+  - id: tasks
+    name: Tasks
+    code: "TK 3.1, 3.2"
+    status: "PoC"
+    phase: poc
+    phase_tags: []
+    module: Execução
+    consuming_areas: [Sales, Trade, DTS]
+    business_owner: Leandro Ferreira (DPM)
+    technical_owner: Data Science
+    description: >-
+      Define a quantidade de tarefas comerciais recomendadas por vendedor e
+      o score de efetividade de cada tarefa, para apoiar a alocação e
+      priorização de visitas por PDV.
+    business_objective: >-
+      Dimensionar a carga de tarefas de cada vendedor de forma realista,
+      equilibrando potencial comercial e efetividade esperada de execução
+      em campo.
+    algorithms: [tasks-effectiveness, tasks-quantity]
+    tables:
+      - "Não disponível neste documento — produto em PoC"
+    consumption: ["Integração manual no BEES (Tasks Quantity)"]
+    source_docs:
+      - "dpm/inciativas ADAN/Iniciativas_Sales_ADAN_2026-2027.xlsx"
+
+  - id: sales-intelligence
+    name: Sales Intelligence
+    code: "SIDash"
+    status: "Sustain"
+    phase: sustain
+    phase_tags: ["Test/Application"]
+    module: Execução
+    consuming_areas: [CRM, Trade, Digital Sales, Marketing, Sales, Growth]
+    business_owner: Leandro Ferreira (DPM)
+    technical_owner: Data Science
+    description: >-
+      Democratiza o acesso aos outputs de Customer Clustering e Portfolio
+      Segmentation em um dashboard de 7 abas, com uma camada de IA
+      conversacional (Genie) para consultas em linguagem natural.
+    business_objective: >-
+      Ser a principal fonte de inteligência comercial para os times de
+      vendas e marketing, consolidando os produtos analíticos do portfólio.
+    algorithms: [sales-intelligence-consolidation, genie-assistant]
+    tables:
+      - "Camada consolidada de outputs dos demais produtos ADAN"
+    consumption: [Dashboard, "IA Conversacional (Genie)"]
+    source_docs:
+      - "sales intel/v1/OKR_Sales_Intelligence.md"
+      - "sales intel/v1/CI_UserGuide_Modulo1_Guia_Principal.md"
+
+  - id: cross-sell-intelligence
+    name: Cross-sell Dashboard
+    code: "PS 2.5 · FP-Growth"
+    status: "MVP"
+    phase: mvp
+    phase_tags: []
+    module: Produto
+    consuming_areas: [CRM, Trade, Digital Sales, Marketing, Sales, Growth]
+    business_owner: Leandro Ferreira (DPM)
+    technical_owner: Data Science
+    description: >-
+      Dashboard de análise de cross-sell entre marcas (market basket
+      analysis), com camada de IA conversacional (Genie) para consultas em
+      linguagem natural sobre regras de associação de compra.
+    business_objective: >-
+      Identificar quais marcas os clientes tendem a comprar em conjunto,
+      para apoiar decisões de expansão de mix e cross-sell por PDV ou por
+      estado.
+    algorithms: [cross-sell-fpgrowth]
+    tables:
+      - "uc_dev_latam_mdip_01.dev_pbf_digitalsales_datascience_sandbox.cross_sell_br"
+      - "uc_dev_latam_mdip_01.dev_pbf_digitalsales_datascience_sandbox.cross_sell_states"
+    consumption: [Dashboard, "IA Conversacional (Genie)"]
+    source_docs:
+      - "suggested order/output/genie_instructions_cross_sell.md"
+      - "suggested order/output/09_prd.md"
+
+  - id: step-discount
+    name: Step Discount
+    code: "DB 4.1"
+    status: "Discovery"
+    phase: discovery
+    phase_tags: []
+    module: Produto
+    consuming_areas: [Trade, Growth]
+    business_owner: Não disponível neste documento
+    technical_owner: Não disponível neste documento
+    description: >-
+      Define a faixa de desconto ideal a ser aplicada por produto/PDV —
+      produto ainda em fase de Discovery, sem documentação técnica
+      detalhada disponível.
+    business_objective: >-
+      Calibrar o desconto ideal para maximizar conversão sem erodir margem,
+      de forma personalizada por PDV.
+    algorithms: []
+    tables:
+      - "Não disponível neste documento — produto em Discovery"
+    consumption: ["Não disponível neste documento"]
+    source_docs:
+      - "dpm/inciativas ADAN/Iniciativas_Sales_ADAN_2026-2027.xlsx"
