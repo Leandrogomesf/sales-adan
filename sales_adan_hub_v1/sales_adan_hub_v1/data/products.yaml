@@ -1,0 +1,218 @@
+products:
+  - id: customer-clustering
+    name: Customer Clustering and Personas
+    code: "CC 1.0"
+    status: "Sustain"
+    phase: sustain
+    phase_tags: ["Test"]
+    module: Cliente
+    consuming_areas: [Trade, CRM, Growth, Sales, Marketing]
+    business_owner: Victor Vidal (PO)
+    technical_owner: Leonardo Damasio (DS Lead)
+    description: >-
+      Segmenta os PDVs da PepsiCo Brasil em clusters comportamentais e
+      personas acionáveis, combinando histórico de vendas, recência, canal
+      digital, inovação e afinidade de marca.
+    business_objective: >-
+      Responder "quem são meus clientes?" para permitir ações comerciais e
+      de marketing diferenciadas por perfil de PDV, alimentando os modelos
+      de Portfolio Segmentation.
+    algorithms: [clustering-kmeans, classification-logreg, personas]
+    tables:
+      - "Feature Store (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.fs_cust_cluster_new)"
+      - "Cluster predictions (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.cust_cluster_predictions)"
+      - "Histórico predictions (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.cust_cluster_classification_history)"
+      - "Sales ADAN predictions (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.sales_adan_predictions)"
+    consumption: [Sales Intell Dashboard, Databricks SQL, Input para outros modelos]
+    source_docs:
+      - "Não Disponível"
+
+  - id: portfolio-segmentation
+    name: Portfolio Segmentation
+    code: "PS 2.1, 2.2, 2.3, 2.4"
+    status: "Sustain"
+    phase: sustain
+    phase_tags: ["Test"]
+    module: Produto
+    consuming_areas: [Trade, Growth, Digital Sales, Marketing]
+    business_owner: Victor Vidal (PO)
+    technical_owner: Leonardo Damasio (DS Lead)
+    description: >-
+      Identifica oportunidades de expansão de portfólio por cliente e
+      produto, combinando score de afinidade (SVD), score de propensão
+      (árvore de decisão), quantidade recomendada e faixas de quantidade.
+    business_objective: >-
+      Priorizar produtos com maior oportunidade de ativação ou crescimento
+      em cada PDV, alimentando Tasks e Suggested Order.
+    algorithms: [affinity-score-svd, propensity-score-tree, product-quantity, quantity-bands]
+    tables:
+      - "Feature Store (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.fs_propensity_score, uc_dev_latam_mdip_01.pbf_digitalsales_datascience.fs_quantity_score)"
+      - "Affinity Score (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.affinity_score_predictions)"
+      - "Propensity Scores (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.propensity_score_predictions)"
+      - "Quantity SCore (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.quantity_score_predictions)"
+      - "Product Code (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.product_code_mapping)"
+      - "Sales ADAN predictions (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.sales_adan_predictions)"
+    consumption: [Databricks SQL, Sales Intell Dashboard, Input para outros modelos]
+    source_docs:
+      - "Não Disponível"
+
+  - id: target-intelligence
+    name: Metas (Target Intelligence)
+    code: "MT 8.1"
+    status: "PoC"
+    phase: poc
+    phase_tags: []
+    module: Vendedor
+    consuming_areas: [DTS, Sales Intelligence, Trade]
+    business_owner: Thiago Ardito
+    technical_owner: Leonardo Damasio (DS Lead)
+    description: >-
+      Cálculo das metas do próximo período a partir do potencial real de
+      venda do PDV, combinando os outputs dos demais algoritmos do Sales
+      ADAN em um modelo de build-up bottom-up.
+    business_objective: >-
+      Maximizar a acurácia da distribuição de metas a partir do potencial
+      real de venda do PDV, sem penalizar a remuneração variável dos
+      vendedores nem automatizar o processo atual na v1.
+    algorithms: [goals-potential-model]
+    tables:
+      - "Não Disponível"
+    consumption: [Databricks SQL]
+    source_docs:
+      - "Não Disponível"
+
+  - id: portfolio-prioritario
+    name: Portfólio Prioritário para Ofertas
+    code: "PP"
+    status: "MVP"
+    phase: mvp
+    phase_tags: ["Test"]
+    module: Execução
+    consuming_areas: [Sales, Trade, DTS]
+    business_owner: Francisco Maron
+    technical_owner: Leonardo Damasio (DS Lead)
+    description: >-
+      Define, para cada PDV, o ranking de 1-10 de ofertas de produtos a
+      serem executadas pelo vendedor, combinando Momentum, Affinity Score
+      e Propensity Score em um score composto.
+    business_objective: >-
+      Direcionar a melhor ação comercial por PDV, testando em piloto 100%
+      algorítmico (sem ajuste humano) se o modelo sozinho atinge o
+      resultado esperado.
+    algorithms: [portfolio-prioritario-score]
+    tables:
+      - "Portfolio Prioritario Score (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.propensity_score_predictions)"
+      - "Sales ADAN predictions (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.sales_adan_predictions)"
+    consumption: [Databricks SQL, Sales Intell Dashboard, Input para BEES Force]
+    source_docs:
+      - "Não Disponível"
+
+  - id: tasks
+    name: Tasks
+    code: "TK 3.1, 3.2"
+    status: "PoC"
+    phase: poc
+    phase_tags: ["WIP"]
+    module: Execução
+    consuming_areas: [Sales, Trade, DTS]
+    business_owner: Emilio Say
+    technical_owner: Leonardo Damasio (DS Lead)
+    description: >-
+      Define a quantidade de tarefas comerciais recomendadas por vendedor e
+      o score de efetividade de cada tarefa, para apoiar a alocação e
+      priorização de visitas por PDV.
+    business_objective: >-
+      Dimensionar a carga de tarefas de cada vendedor de forma realista,
+      equilibrando potencial comercial e efetividade esperada de execução
+      em campo.
+    algorithms: [tasks-effectiveness, tasks-quantity]
+    tables:
+      - "Tasks Quantity Score (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.task_quantity_predictions)"
+    consumption: [Databricks SQL, Integração no BEES]
+    source_docs:
+      - "Não Disponível"
+
+  - id: sales-intelligence
+    name: Sales Intelligence Dashboard
+    code: "SIDash"
+    status: "Sustain"
+    phase: sustain
+    phase_tags: ["Live"]
+    dashboard_url: "https://adb-1341635366377882.2.azuredatabricks.net/dashboardsv3/01f16f1447981b249ee139de003e03cb/published?o=1341635366377882&view=fullscreen"
+    module: Execução
+    consuming_areas: [CRM, Trade, Digital Sales, Marketing, Sales, Growth]
+    business_owner: Leandro Ferreira (DPM)
+    technical_owner: Leandro Ferreira (DPM)
+    description: >-
+      Democratiza o acesso aos outputs de Customer Clustering e Portfolio
+      Segmentation em um dashboard de 7 abas, com uma camada de IA
+      conversacional (Genie) para consultas em linguagem natural.
+    business_objective: >-
+      Ser a principal fonte de inteligência comercial para os times de
+      vendas e marketing, consolidando os produtos analíticos do portfólio.
+    algorithms: [sales-intelligence-consolidation, genie-assistant]
+    tables:
+      - "Camada consolidada de outputs dos produtos ADAN Customer Clustering e Portfolio Segmentation"
+      - "Cluster predictions (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.cust_cluster_predictions)"
+      - "Histórico predictions (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.cust_cluster_classification_history)"
+      - "Affinity Score (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.affinity_score_predictions)"
+      - "Propensity Scores (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.propensity_score_predictions)"
+      - "Quantity SCore (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.quantity_score_predictions)"
+      - "Product Code (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.product_code_mapping)"
+      - "Portfolio Prioritario Score (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.propensity_score_predictions)"
+      - "Sales ADAN predictions (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.sales_adan_predictions)"
+    consumption: [Dashboard, IA Conversacional (Genie)]
+    source_docs:
+      - "Não Disponível"
+
+  - id: cross-sell-intelligence
+    name: Cross-sell Dashboard
+    code: "PS 2.5 · FP-Growth"
+    status: "MVP"
+    phase: mvp
+    phase_tags: ["Live"]
+    dashboard_url: "https://adb-1341635366377882.2.azuredatabricks.net/dashboardsv3/01f1ae22f97e118aa644ed8354945821/published?o=1341635366377882&view=fullscreen"
+    module: Produto
+    consuming_areas: [CRM, Trade, Digital Sales, Marketing, Sales, Growth]
+    business_owner: Leandro Ferreira (DPM)
+    technical_owner: Leandro Ferreira (DPM)
+    description: >-
+      Dashboard de análise de cross-sell entre marcas (market basket
+      analysis), com camada de IA conversacional (Genie) para consultas em
+      linguagem natural sobre regras de associação de compra.
+    business_objective: >-
+      Identificar quais marcas os clientes tendem a comprar em conjunto,
+      para apoiar decisões de expansão de mix e cross-sell por PDV ou por
+      estado.
+    algorithms: [cross-sell-fpgrowth]
+    tables:
+      - "Cross sell Score Brasil (uc_dev_latam_mdip_01.dev_pbf_digitalsales_datascience_sandbox.cross_sell_br)"
+      - "Cross sell Score UF (uc_dev_latam_mdip_01.dev_pbf_digitalsales_datascience_sandbox.cross_sell_states)"
+      - "Cross sell Score Customer (uc_dev_latam_mdip_01.dev_pbf_digitalsales_datascience_sandbox.cross_sell_customer)"
+    consumption: [Dashboard, "IA Conversacional (Genie)"]
+    source_docs:
+      - "Não Disponível"
+
+  - id: step-discount
+    name: Step Discount
+    code: "DB 4.1"
+    status: "Discovery"
+    phase: discovery
+    phase_tags: ["Discovery"]
+    module: Produto
+    consuming_areas: [Trade, Growth]
+    business_owner: Victor Vidal (PO)
+    technical_owner: Leonardo Damasio (DS Lead)
+    description: >-
+      Define a faixa de desconto ideal a ser aplicada por produto/PDV —
+      produto ainda em fase de Discovery, sem documentação técnica
+      detalhada disponível.
+    business_objective: >-
+      Calibrar o desconto ideal para maximizar conversão sem erodir margem,
+      de forma personalizada por PDV.
+    algorithms: []
+    tables:
+      - "Não disponível — produto em Discovery"
+    consumption: ["Não disponível"]
+    source_docs:
+      - "Não Disponível"

@@ -1,0 +1,82 @@
+# Roadmap de maturidade por fase (Discovery -> PoC -> MVP -> Sustain)
+# Itens em Sustain podem carregar a tag secundária "Pilot" no catálogo de produtos.
+# Fonte: definição direta do DPM (Leandro Ferreira), Nov/2026.
+# phase_order define a ordem de exibição das colunas no componente de roadmap.
+phase_order: [discovery, poc, mvp, sustain]
+
+phase_labels:
+  discovery: "Discovery"
+  poc: "PoC"
+  mvp: "MVP"
+  sustain: "Sustain"
+
+items:
+  - name: Step Discount
+    phase: discovery
+    start_date: "2026-12"
+    product_id: step-discount
+
+  - name: Automação de Tasks na BEES
+    phase: discovery
+    start_date: "2026-11"
+    product_id: tasks
+
+  - name: Tasks Quantity
+    phase: poc
+    start_date: "2026-11"
+    product_id: tasks
+
+  - name: Tasks Effectiveness
+    phase: poc
+    start_date: "2026-11"
+    product_id: tasks
+
+  - name: Metas / Rotas
+    phase: poc
+    start_date: "2026-12"
+    product_id: target-intelligence
+
+  - name: Cross-sell
+    phase: mvp
+    start_date: "2026-08"
+    product_id: cross-sell-intelligence
+
+  - name: Customer Clustering
+    phase: sustain
+    start_date: "2026-01"
+    product_id: customer-clustering
+
+  - name: Customer Classification
+    phase: sustain
+    start_date: "2026-01"
+    product_id: customer-clustering
+
+  - name: Affinity Score
+    phase: sustain
+    start_date: "2026-04"
+    product_id: portfolio-segmentation
+
+  - name: Propensity Score
+    phase: sustain
+    start_date: "2026-05"
+    product_id: portfolio-segmentation
+
+  - name: Product Quantity
+    phase: sustain
+    start_date: "2026-06"
+    product_id: portfolio-segmentation
+
+  - name: Quantity Bands
+    phase: sustain
+    start_date: "2026-07"
+    product_id: portfolio-segmentation
+
+  - name: Sales Intelligence
+    phase: sustain
+    start_date: "2026-07"
+    product_id: sales-intelligence
+
+  - name: Portfólio Prioritário
+    phase: sustain
+    start_date: "2026-08"
+    product_id: portfolio-prioritario

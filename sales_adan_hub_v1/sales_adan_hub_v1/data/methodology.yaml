@@ -1,0 +1,295 @@
+intro: >-
+  A metodologia Sales ADAN combina três referências que operam em camadas
+  diferentes e complementares: o PepOne organiza a governança da demanda, o
+  Ciclo de Vida do Produto enxerga a maturidade comercial no mercado, e o
+  Ciclo de Desenvolvimento de Produto de Dados com ML detalha a maturidade
+  técnica de cada algoritmo. Não são a mesma régua — por isso são
+  apresentados lado a lado, não um mapeado dentro do outro.
+
+pepone:
+  description: >-
+    O PepOne é o processo de governança de demanda da PepsiCo que organiza
+    como uma ideia vira produto: da entrada da demanda até a operação
+    contínua. Toda demanda do Sales ADAN passa por essas etapas antes,
+    durante e depois do desenvolvimento técnico.
+  stages:
+    - name: Intake
+      description: Entrada e registro da demanda
+    - name: Qualification
+      description: PUDMA respondido, problema qualificado
+    - name: Discovery
+      description: Oportunidade explorada, hipótese formulada
+    - name: Priorization
+      description: Priorização frente ao backlog do portfólio
+    - name: Delivery
+      description: Construção técnica do produto
+    - name: Launch
+      description: Lançamento e rollout para o negócio
+    - name: Operation
+      description: Operação contínua e monitoramento
+  mapping:
+    - adan_phase: discovery
+      pepone_stages: "Intake → Qualification → Discovery → Priorization"
+      what_happens: "Problema definido, PUDMA respondido, OKR criado, dados mapeados, hipótese formulada"
+    - adan_phase: explore
+      pepone_stages: "Discovery → Priorization"
+      what_happens: "EDA, feature engineering, validação estatística, arquitetura de dados definida"
+    - adan_phase: poc
+      pepone_stages: "Priorization → Delivery"
+      what_happens: "Primeiro modelo treinado com dados reais, hipótese validada, MLflow rodando"
+    - adan_phase: pilot
+      pepone_stages: "Delivery → Launch"
+      what_happens: "A/B test rodando, KPIs sendo medidos, rollout planejado"
+    - adan_phase: mvp
+      pepone_stages: "Delivery → Launch"
+      what_happens: "Produto em produção, impacto comprovado, handover preparado"
+    - adan_phase: sustain
+      pepone_stages: "Operation"
+      what_happens: "Monitoramento contínuo, retraining automático, SLAs ativos, FinOps"
+  discovery_warning: >-
+    "Discovery" existe nos dois frameworks com significados diferentes.
+    Discovery do PepOne é uma etapa de processo (qualificar o problema).
+    Fase Discovery do ADAN é maturidade técnica (entender dados, hipótese,
+    use case). Uma mesma demanda pode percorrer até 3 ciclos PepOne ainda
+    dentro da fase ADAN Discovery.
+  item_types:
+    - tag: "[Insights]"
+      when_used: "Causa raiz, oportunidades, análises pontuais"
+    - tag: "[Analytics]"
+      when_used: "Dashboards, métricas, acompanhamento"
+    - tag: "[Explore]"
+      when_used: "EDA, feature engineering, validação estatística"
+    - tag: "[Modeling]"
+      when_used: "Modelos estatísticos, preditivos, segmentações"
+    - tag: "[Experiment]"
+      when_used: "POCs, testes A/B, validação de hipóteses"
+    - tag: "[MLOps]"
+      when_used: "Deploy, drift, operação de modelos"
+    - tag: "[Governance]"
+      when_used: "Qualidade, catálogo, linhagem, compliance"
+    - tag: "[Roll-out]"
+      when_used: "Plano de lançamento, comunicação, treinamento e handover"
+    - tag: "[Sustain]"
+      when_used: "Correções, manutenção, incidentes"
+    - tag: "[RPA]"
+      when_used: "Rotinas manuais, consolidações automatizadas"
+  tracking_tool: >-
+    O time usa o Azure DevOps (ADO) como ferramenta de gestão de projetos e
+    rastreamento do backlog — cada demanda vira um item (Epic, Feature, User
+    Story ou Task) com a fase ADAN e o tipo registrados como tags, permitindo
+    acompanhar onde cada produto está no ciclo sem depender de busca em texto
+    livre.
+
+product_lifecycle:
+  description: >-
+    Lente de mercado: em qual momento de maturidade comercial está cada
+    produto do portfólio, independentemente da fase técnica de
+    desenvolvimento. Um produto pode estar tecnicamente em Sustain (ADAN) e
+    comercialmente em Crescimento (ainda ganhando adoção e penetração).
+  stages:
+    - name: Introdução
+      description: Produto recém-lançado, baixa adoção, foco em validação de uso real
+      color: "#9CA3AF"
+    - name: Crescimento
+      description: Adoção em expansão, penetração subindo, ainda ganhando escala
+      color: "#60A5FA"
+    - name: Maturação
+      description: Adoção estável e consolidada, foco em eficiência e retenção de valor
+      color: "#34D399"
+    - name: Declínio
+      description: Queda de relevância ou uso, candidato a descontinuação ou revisão
+      color: "#F87171"
+  products_by_stage:
+    - stage: Introdução
+      products: ["Step Discount"]
+    - stage: Crescimento
+      products: ["Tasks", "Metas (Target Intelligence)", "Portfólio Prioritário para Ofertas", "Cross-sell Dashboard"]
+    - stage: Maturação
+      products: ["Customer Clustering and Personas", "Portfolio Segmentation", "Sales Intelligence Dashboard"]
+    - stage: Declínio
+      products: []
+  decline_note: >-
+    Nenhum produto do portfólio está hoje em Declínio — não há produto sendo
+    descontinuado no momento.
+
+adan_cycle:
+  description: >-
+    Lente técnica: maturidade de desenvolvimento de cada algoritmo, do
+    entendimento do problema até a operação contígua, com gates de decisão
+    go/no-go entre fases.
+  big_numbers:
+    - label: "Fases no ciclo"
+      value: "6"
+    - label: "Sprints (Fases de Produto)"
+      value: "20-30"
+    - label: "Duração total estimada"
+      value: "13-20 meses"
+  macro_groups:
+    - name: "Fases Exploratórias"
+      phases: "Discovery + Explore + PoC"
+      duration_sprints: "6-10 sprints"
+      duration_months: "3-5 meses"
+    - name: "Fases de Produto"
+      phases: "Pilot + MVP + Sustain"
+      duration_sprints: "20-30 sprints"
+      duration_months: "10-15 meses"
+  phases:
+    - id: discovery
+      duration: "2-4 sprints"
+      characteristics:
+        - "Entendimento do problema"
+        - "Hipótese de solução"
+        - "Regras de negócio"
+        - "Proposta de produto"
+        - "Mapeamento To-Be"
+        - "Empacotamento"
+      prerequisites:
+        - "Onboarding dos times iniciais"
+      outputs:
+        - "Use case definido"
+        - "Estratégia de modelo ML"
+        - "Ingestão/transformação de dados"
+      responsibilities:
+        - role: DS
+          detail: "Business understanding"
+        - role: DE
+          detail: "Mapeamento de fontes, profiling inicial"
+        - role: AR
+          detail: "Ambiente de desenvolvimento compliant"
+        - role: GOV
+          detail: "Guardrails de compliance"
+      gate: "Problema de negócio definido? Dados disponíveis?"
+      gate_yes: "Explore"
+      gate_no: "Kill"
+    - id: explore
+      duration: "2-3 sprints"
+      characteristics:
+        - "Exploração de dados"
+        - "Feature engineering"
+        - "Experimentos ML"
+      prerequisites:
+        - "Dados validados"
+        - "Dicionário de dados"
+      outputs:
+        - "Feature Store pronta"
+      responsibilities:
+        - role: DS
+          detail: "EDA, feature engineering, seleção de algoritmos, draft do Data Contract"
+        - role: DE
+          detail: "Checks de Data Quality"
+        - role: AR
+          detail: "Verificação de ingestões"
+        - role: GOV
+          detail: "Metadados no Data Catalog, domínio de dados, versionamento"
+      gate: "Área de negócio valida?"
+      gate_yes: "PoC"
+      gate_no: "Kill"
+    - id: poc
+      duration: "2-3 sprints"
+      characteristics:
+        - "Validação de dados e modelo via Experiment Room"
+      prerequisites:
+        - "Experimentos com modelos"
+        - "Métodos de consumo definidos"
+      outputs:
+        - "Modelos ML"
+        - "Hipótese validada"
+        - "Estrutura MLOps"
+        - "Início do DPC"
+      responsibilities:
+        - role: DE
+          detail: "Pipelines efêmeros, validação Data Quality"
+        - role: DS
+          detail: "Treinamento com dados reais, benchmark, MLflow/Comet, definição MLOps"
+        - role: AR
+          detail: "Buckets para artefatos, CI/CD Docker, camadas raw/bronze"
+      gate: "Modelos relevantes existem? Estatística coerente? Amostra disponível p/ split teste-controle?"
+      gate_yes: "Pilot"
+      gate_no: "Kill"
+    - id: pilot
+      duration: "8-9 sprints"
+      characteristics:
+        - "Soft Launch em produção controlada"
+      prerequisites:
+        - "KPIs definidos"
+        - "A/B testing"
+        - "Data Contract aprovado"
+        - "Estratégia de rollback"
+      outputs:
+        - "Hipótese selecionada"
+        - "Plano de rollout"
+        - "Plano de handover"
+      responsibilities:
+        - role: DE
+          detail: "Silver/Trusted, testes de carga, observabilidade SLAs/retries/alertas, lineage, quality gates, reprocessamento, idempotência"
+        - role: DS
+          detail: "A/B test, tuning de hiperparâmetros"
+        - role: AR
+          detail: "Staging, logging centralizado, camada Gold/Serving"
+      gate: "KPI comprova solução razoável? Sponsors aprovaram?"
+      gate_yes: "MVP"
+      gate_no: "Kill"
+    - id: mvp
+      duration: "12-20 sprints"
+      characteristics:
+        - "Produto com valor e requisitos mínimos"
+        - "Alinhamento com Sustain"
+        - "Documentação"
+        - "Baselines de Governança/Privacidade"
+      prerequisites:
+        - "Empacotamento"
+        - "Comunicação"
+        - "Data Lake exclusivo"
+        - "ROI (opcional)"
+        - "SLOs"
+      outputs:
+        - "Produto testado e validado"
+        - "Arquitetura escalável"
+      responsibilities:
+        - role: DE
+          detail: "Pipelines produtivos Airflow/Prefect, Feature Store treino/inferência, versionamento, SLAs, controle de acesso/criptografia PII"
+        - role: DS
+          detail: "Drift detection, refinamento de código"
+        - role: IN
+          detail: "Containers K8s/ECS, alarmes, CI/CD completo, estratégia de serving"
+        - role: GOV
+          detail: "Versionamento para auditoria"
+      gate: "Impacto comprovado e satisfatório?"
+      gate_yes: "Sustain"
+      gate_no: "Kill"
+    - id: sustain
+      duration: "A partir da metade do MVP, contínuo"
+      characteristics:
+        - "Fase operacional final"
+        - "Monitoramento contínuo"
+      prerequisites:
+        - "Handover concluído"
+        - "Documentação técnica"
+        - "Canais de feedback"
+      outputs:
+        - "Metodologia de tracking recorrente"
+      responsibilities:
+        - role: DE
+          detail: "Arquitetura madura, monitoramento de drift/schema/freshness, auditoria LGPD, Data Contract"
+        - role: DS
+          detail: "MLOps consolidado com retraining automático, testes de integração, auditoria de bias"
+        - role: IN
+          detail: "Auto-scaling, FinOps, segurança, retenção/purga"
+        - role: AO
+          detail: "Runbooks de incidentes, revisões arquiteturais"
+      gate: null
+      gate_yes: null
+      gate_no: null
+  role_glossary:
+    - role: DS
+      meaning: Data Scientist
+    - role: DE
+      meaning: Data Engineer
+    - role: AR
+      meaning: Arquitetura
+    - role: GOV
+      meaning: Governança de Dados
+    - role: IN
+      meaning: Infraestrutura
+    - role: AO
+      meaning: Apoio Operacional

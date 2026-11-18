@@ -9,3 +9,9 @@ __pycache__/
 node_modules/
 dist/
 *.log
+
+# Backups / arquivos zip
+*.zip
+
+# Logs de verificação local
+streamlit_check_log.txt
