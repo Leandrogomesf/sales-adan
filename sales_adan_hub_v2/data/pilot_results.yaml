@@ -1,0 +1,106 @@
+# Pilotos e testes já encerrados do Sales ADAN.
+# Fontes: initiative.yaml (histórico), "STATUS ENTREGAS SALES ADAN.pdf" e
+# slides executivos "KPIs Impact" / "Sales ADAN: Path to Commercial Intelligence".
+pilots:
+  - id: cc-v2
+    title: "Piloto CC V2 (Customer Clustering)"
+    reference_period: "Fevereiro a Abril de 2026"
+    source: "sales intel/v1/OKR_Sales_Intelligence.md"
+    note: >-
+      Indicadores de um piloto já encerrado neste período de referência — não
+      representam resultado corrente da operação.
+    metrics_table:
+      - name: "Crescimento de Volume (VMD) vs. controle"
+        fev: "+17,5 p.p."
+        mar: "+9 p.p."
+        abr: "+6 p.p."
+        trend: "declinante"
+      - name: "Adoção Digital vs. controle"
+        fev: "+1,5 p.p."
+        mar: "-1 p.p."
+        abr: "+1 p.p."
+        trend: "estável"
+      - name: "Tarefas Efetivadas vs. controle"
+        fev: "-11 p.p."
+        mar: "+1,9 p.p."
+        abr: "+3,2 p.p."
+        trend: "recuperando"
+      - name: "SKUs/PDV vs. controle"
+        fev: "+0,7"
+        mar: "-0,7"
+        abr: "+1,2"
+        trend: "volátil"
+
+  - id: ago-2026-prioritario
+    title: "Piloto Portfólio Prioritário — Ofertas ELMA (Agosto/2026)"
+    reference_period: "Agosto de 2026 (01/08/2026)"
+    source: "STATUS ENTREGAS SALES ADAN.pdf — slide \"Performance Sales ADAN em Agosto\""
+    note: >-
+      Mesma medição reportada em duas moedas (R$ e US$) no material original.
+      Desenho do piloto (tamanho de amostra, grupo controle) não detalhado
+      nesta fonte.
+    big_numbers:
+      - label: "Net Sales incremental (ELMA)"
+        value: "+R$ 3 milhões"
+        secondary: "≈ US$ 580 mil"
+      - label: "Volume incremental (ELMA)"
+        value: "+59 toneladas"
+        secondary: null
+      - label: "Ofertas mais efetivas"
+        value: "+2,44 p.p."
+        secondary: "diferença % PDVs com oferta completa"
+      - label: "Completude de ofertas"
+        value: "+1 oferta"
+        secondary: "média 3,91 (teste) vs. 3,18 (controle)"
+      - label: "Horas economizadas, em média, por vendedor/time"
+        value: "40h"
+        secondary: null
+      - label: "Divisões com alta performance de loyalty"
+        value: "5 de 6"
+        secondary: null
+    divisions_table:
+      - division: "MG/CO DTS"
+        net_sales_var_pct: "-17,65%"
+        net_sales_var_control_pct: "-6,90%"
+        incremental_ns_growth_pct: "10,93%"
+        incremental_ns_growth_value: "559.491"
+      - division: "RJ/ES/NE DTS"
+        net_sales_var_pct: "-28,59%"
+        net_sales_var_control_pct: "-17,51%"
+        incremental_ns_growth_pct: "10,61%"
+        incremental_ns_growth_value: "770.733"
+      - division: "SP DTS 1"
+        net_sales_var_pct: "-8,06%"
+        net_sales_var_control_pct: "-17,86%"
+        incremental_ns_growth_pct: "-6,50%"
+        incremental_ns_growth_value: "-438.744"
+      - division: "SP DTS 2"
+        net_sales_var_pct: "-10,01%"
+        net_sales_var_control_pct: "-33,19%"
+        incremental_ns_growth_pct: "7,85%"
+        incremental_ns_growth_value: "709.802"
+      - division: "SUL DSD I"
+        net_sales_var_pct: "-27,42%"
+        net_sales_var_control_pct: "5,77%"
+        incremental_ns_growth_pct: "5,77%"
+        incremental_ns_growth_value: "638.526"
+      - division: "SUL DSD II"
+        net_sales_var_pct: "0,77%"
+        net_sales_var_control_pct: "-8,29%"
+        incremental_ns_growth_pct: "9,05%"
+        incremental_ns_growth_value: "669.899"
+
+  - id: out-2026-uplift
+    title: "Piloto de Uplift — Net Sales (Outubro/2026)"
+    reference_period: "Outubro de 2026"
+    source: "Slide executivo \"Sales ADAN Impact\""
+    note: >-
+      Resumo executivo de alto nível — sem detalhamento adicional (amostra,
+      grupo controle, quebra por divisão) disponível nesta fonte.
+    big_numbers:
+      - label: "Net Sales incremental uplift"
+        value: "+6%"
+        secondary: null
+      - label: "Valor incremental"
+        value: "≈ US$ 1,7 milhão"
+        secondary: null

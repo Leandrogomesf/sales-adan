@@ -1,0 +1,165 @@
+# Fonte: dpm/inciativas ADAN/Iniciativas_Sales_ADAN_2026-2027.xlsx (lista mestre atualizada pelo DPM)
+# Lista mestre de iniciativas do portfólio Sales ADAN (24 linhas).
+# product_id: referencia o produto correspondente em products.yaml, quando existir página de detalhe.
+initiatives:
+  - id: 1
+    name: Customer Clustering - Clustering
+    data_product_type: Advanced Analytics
+    duration: "2025+2026"
+    product_id: customer-clustering
+
+  - id: 2
+    name: Customer Clustering - Classification
+    data_product_type: Advanced Analytics
+    duration: "2025+2026"
+    product_id: customer-clustering
+
+  - id: 3
+    name: Customer Clustering - Personas
+    data_product_type: Marketing
+    duration: "2026"
+    product_id: customer-clustering
+
+  - id: 4
+    name: Portfolio Segmentation - Score de Afinidade
+    data_product_type: Advanced Analytics
+    duration: "2026"
+    product_id: portfolio-segmentation
+
+  - id: 5
+    name: Portfolio Segmentation - Score de Propensão
+    data_product_type: Advanced Analytics
+    duration: "2026"
+    product_id: portfolio-segmentation
+
+  - id: 6
+    name: Portfolio Segmentation - Modelo de Quantidade Ideal
+    data_product_type: Advanced Analytics
+    duration: "2026"
+    product_id: portfolio-segmentation
+
+  - id: 7
+    name: Portfolio Segmentation - Modelo de Quantidade Adicional
+    data_product_type: Advanced Analytics
+    duration: "2026"
+    product_id: portfolio-segmentation
+
+  - id: 8
+    name: Portfólio Prioritário para Ofertas
+    data_product_type: Advanced Analytics
+    duration: "2026"
+    product_id: portfolio-prioritario
+
+  - id: 9
+    name: Sales Intelligence V1 - Dashboard
+    data_product_type: Data Viz
+    duration: "2026"
+    product_id: sales-intelligence
+
+  - id: 10
+    name: Sales Intelligence V2 - Power BI e Evolução de UX/UI
+    data_product_type: Data Viz
+    duration: "2026+2027"
+    product_id: sales-intelligence
+
+  - id: 11
+    name: Tasks - Quantidade de Tarefas
+    data_product_type: Advanced Analytics
+    duration: "2026"
+    product_id: tasks
+
+  - id: 12
+    name: Tasks - Score de Efetividade
+    data_product_type: Advanced Analytics
+    duration: "2026"
+    product_id: tasks
+
+  - id: 13
+    name: Tasks - Integração e Publicação no BEES Force/Biz
+    data_product_type: RPA
+    duration: "2026+2027"
+    product_id: tasks
+
+  - id: 14
+    name: Metas - Target Intelligence
+    data_product_type: Advanced Analytics
+    duration: "2026+2027"
+    product_id: target-intelligence
+
+  - id: 15
+    name: Step Discount
+    data_product_type: Advanced Analytics
+    duration: "2027"
+    product_id: step-discount
+
+  - id: 16
+    name: Audience Channel
+    data_product_type: Advanced Analytics
+    duration: "2027"
+    product_id: null
+
+  - id: 17
+    name: Suggested Order - Jornada do Cliente
+    data_product_type: Advanced Analytics
+    duration: "TBD"
+    product_id: null
+
+  - id: 18
+    name: Suggested Order - Jornada do Vendedor
+    data_product_type: Advanced Analytics
+    duration: "TBD"
+    product_id: null
+
+  - id: 19
+    name: Loyalty - Recomendação de Quantidade de Challenges
+    data_product_type: Advanced Analytics
+    duration: "TBD"
+    product_id: null
+
+  - id: 20
+    name: Loyalty - Ranking de Challenges por Vendedor
+    data_product_type: Advanced Analytics
+    duration: "TBD"
+    product_id: null
+
+  - id: 21
+    name: Frontline Clustering - Segmentação de Vendedores
+    data_product_type: Advanced Analytics
+    duration: "TBD"
+    product_id: null
+
+  - id: 22
+    name: Route Optimization - Otimização de Rotas
+    data_product_type: Advanced Analytics
+    duration: "TBD"
+    product_id: null
+
+  - id: 23
+    name: Van Load Optimization - Carregamento de Van Sales
+    data_product_type: Advanced Analytics
+    duration: "TBD"
+    product_id: null
+
+  - id: 24
+    name: Expansão dos Produtos Sales ADAN para OT
+    data_product_type: TBD
+    duration: "TBD"
+    product_id: null
+
+  - id: 25
+    name: Integração IBP ADAN x Sales ADAN
+    data_product_type: TBD
+    duration: "TBD"
+    product_id: null
+
+  - id: 26
+    name: Integração CRM x Sales ADAN para Jornadas B2B
+    data_product_type: TBD
+    duration: "TBD"
+    product_id: null
+
+  - id: 27
+    name: Score de Risco de Inatividade (Churn) de PDV
+    data_product_type: TBD
+    duration: "TBD"
+    product_id: null

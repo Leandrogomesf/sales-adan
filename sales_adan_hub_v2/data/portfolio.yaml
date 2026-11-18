@@ -1,0 +1,1437 @@
+# Fonte única de verdade do portfólio Sales ADAN.
+# Cada produto tem UMA fase ADAN (phase, enum de components/status.py::PHASE_ORDER)
+# e UM status operacional (operational_status: Live | Test | WIP | Discovery).
+# Algoritmos ficam aninhados dentro do produto — não há mais arquivo separado
+# de algoritmos nem tags de fase divergentes por camada.
+#
+# Decisões de reconciliação desta migração (ver auditoria v2 — achados A1/A2/A3):
+#   - Metas (Target Intelligence): PoC (segue o catálogo antigo, não o texto do algoritmo)
+#   - Portfólio Prioritário: MVP (segue o catálogo antigo, não o roadmap antigo)
+#   - Customer Clustering: status operacional Live (segue o algoritmo, não a tag antiga)
+
+products:
+  - id: customer-clustering
+    name: Customer Clustering and Personas
+    code: "CC 1.0"
+    phase: sustain
+    operational_status: Live
+    module: Cliente
+    consuming_areas: [Trade, CRM, Growth, Sales, Marketing]
+    business_owner: Victor Vidal (PO)
+    technical_owner: Leonardo Damasio (DS Lead)
+    description: >-
+      Segmenta os PDVs da PepsiCo Brasil em clusters comportamentais e
+      personas acionáveis, combinando histórico de vendas, recência, canal
+      digital, inovação e afinidade de marca.
+    business_objective: >-
+      Responder "quem são meus clientes?" para permitir ações comerciais e
+      de marketing diferenciadas por perfil de PDV, alimentando os modelos
+      de Portfolio Segmentation.
+    tables:
+      - "Feature Store (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.fs_cust_cluster_new)"
+      - "Cluster predictions (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.cust_cluster_predictions)"
+      - "Histórico predictions (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.cust_cluster_classification_history)"
+      - "Sales ADAN predictions (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.sales_adan_predictions)"
+    consumption: [Sales Intell Dashboard, Databricks SQL, Input para outros modelos]
+    source_docs:
+      - "Não Disponível"
+    algorithms:
+      - id: clustering-kmeans
+        name: Customer Clustering (KMeans)
+        operational_status: Live
+        phase_since: "2026-01"
+        last_run: "2026-08-21"
+        last_training: "2026-04-24"
+        registered_model:
+          name: "ml_model_customer_clustering"
+          unity_catalog_path: "uc_dev_latam_mdip_01.pbf_digitalsales_datascience.ml_model_customer_clustering"
+          champion_version: 10
+          challenger_version: 11
+          latest_version: 11
+        functional:
+          problem_solved: >-
+            Segmenta os PDVs em grupos comportamentais homogêneos a partir de
+            características de vendas, frequência e recência de compra, adoção
+            do canal digital, inovação e afinidade com famílias de marca.
+          decision_supported: >-
+            Identificar qual persona/cluster melhor representa cada PDV, apoiando
+            a diferenciação de campanhas, abordagens comerciais, comunicação e
+            estratégias de desenvolvimento do cliente.
+          users: [CRM, Trade Marketing, Marketing, Sales]
+          granularity: "PDV (customer_id)"
+          update_frequency: "Mensal"
+          plain_explanation: >-
+            O modelo analisa PDVs com comportamentos semelhantes e os organiza em
+            5 grupos. Para isso, considera informações como vendas, frequência de
+            pedidos, uso do canal digital, inovação e afinidade com marcas.
+            Cada cluster é posteriormente representado por uma persona para tornar
+            a segmentação mais simples de interpretar e utilizar pelo negócio.
+          known_limitations: >-
+            O número de clusters é fixado em 5 por decisão conjunta entre negócio
+            e Data Science. Dessa forma, o modelo não altera automaticamente a
+            quantidade de segmentos caso ocorram mudanças estruturais importantes
+            no comportamento da base. Mudanças relevantes na população ou no perfil
+            dos PDVs podem exigir nova avaliação do KMeans, das features, das
+            personas e da estratégia de segmentação.
+        technical:
+          pipeline: >-
+            Feature Store → Preparação dos dados e tratamento de outliers →
+            Padronização das variáveis → PCA (90% da variância) →
+            Clusterização (KMeans, k=5) → Atribuição inicial dos clusters →
+            Classificação operacional de PDVs via Regressão Logística →
+            Tabela de output
+          model: >-
+            KMeans para definição da estrutura original de clusters +
+            Regressão Logística Multinomial como modelo Champion para
+            classificação operacional de PDVs nos clusters definidos.
+          model_diagram: "1_kmeans.png"
+          target: "Atribuição de cluster (1 a 5)"
+          observation_window: "12 meses"
+          prediction_window: "Não aplicável (classificação, não previsão temporal)"
+          main_features:
+            - "TotSales12m — Total de Vendas (12 meses)"
+            - "NPedidos12m — Número de Pedidos (12 meses)"
+            - "AvgSales12m — Ticket Médio (12 meses)"
+            - "RecenPep — Recência de Compra PepsiCo"
+            - "RecenBees — Recência no Bees"
+            - "PercNSalesBees12m — % de Vendas via Bees"
+            - "QtdInov12 / PenInov12 — Quantidade e Penetração de Inovação"
+            - "VolMarcaFam_[Marca]12m — Afinidade por família de marca"
+          validation_strategy: "Não disponível"
+          calibration_method: "Escalonamento via StandardScaler (média 0, variância 1)"
+          postprocessing_rules: "Filtro de variância constante (threshold 0.8) e redutor de colinearidade (Pearson > 0.7)"
+          retraining_frequency: "Não disponível"
+        output_table:
+          name: "cust_cluster_predictions"
+          unity_catalog_path: "uc_dev_latam_mdip_01.pbf_digitalsales_datascience.cust_cluster_predictions"
+          execution_date_column: reference_date
+          columns:
+            - {name: CustomerId, type: string, description: "Identificador do PDV", example: "100023517"}
+            - {name: cluster, type: int, description: "Cluster atribuído pelo KMeans", example: "0"}
+            - {name: reference_date, type: date, description: "Data de referência das features", example: "2026-04-24"}
+            - {name: TotSales12m, type: double, description: "Total de vendas (12 meses)", example: "13444.71"}
+            - {name: NPedidos12m, type: double, description: "Número de pedidos (12 meses)", example: "34.0"}
+            - {name: RecenPep, type: int, description: "Recência de compra PepsiCo (dias)", example: "10"}
+            - {name: PercNSalesBees12m, type: double, description: "% de vendas via BEES (12 meses)", example: "0.77"}
+            - {name: QtdInov12, type: double, description: "Quantidade de produtos de inovação (12 meses)", example: "23.0"}
+            - {name: PercPedIno, type: double, description: "% de pedidos com inovação", example: "0.35"}
+            - {name: PercCompChall12m, type: double, description: "% de desafios concluídos (12 meses)", example: "0.25"}
+            - {name: PercVisitasRealizadas, type: double, description: "% de visitas realizadas", example: "0.48"}
+            - {name: VolMarcaFam_RUFFLES12m, type: double, description: "Share de volume da família RUFFLES (12 meses)", example: "0.078"}
+            - {name: VolMarcaFam_CHEETOS12m, type: double, description: "Share de volume da família CHEETOS (12 meses)", example: "0.118"}
+            - {name: VolMarcaFam_DORITOS12m, type: double, description: "Share de volume da família DORITOS (12 meses)", example: "0.112"}
+            - {name: VolMarcaFam_LAYS12m, type: double, description: "Share de volume da família LAYS (12 meses)", example: "0.026"}
+        technical_metrics:
+          model_performance:
+            - "Algoritmo de clusterização: KMeans, k=5"
+            - "Algoritmo de classificação: Regressão Logística Multinomial"
+          coverage: "Não disponível neste documento"
+          operational_quality: "Pipeline mensal via Databricks; artefatos versionados no Unity Catalog"
+          drift_stability: "Não disponível neste documento"
+        business_value:
+          note: >-
+            Ver resultados consolidados do piloto CC V2 (Fev-Abr 2026) na tela
+            de Testes e Resultados — métricas de VMD, adoção digital e tarefas
+            efetivadas vs. grupo controle.
+          metrics: ["Net Sales incremental", "VMD vs. controle", "Adoção digital", "Tarefas efetivadas"]
+
+      - id: classification-logreg
+        name: Customer Classification (Regressão Logística)
+        operational_status: Live
+        phase_since: "2026-01"
+        last_run: "2026-11-17"
+        last_training: "2026-06-30"
+        registered_model:
+          name: "ml_model_customer_classification"
+          unity_catalog_path: "uc_dev_latam_mdip_01.pbf_digitalsales_datascience.ml_model_customer_classification"
+          champion_version: 1
+          challenger_version: 1
+          latest_version: 1
+        functional:
+          problem_solved: >-
+            Operacionaliza a atribuição de PDVs aos 5 clusters definidos pelo
+            Customer Clustering, evitando a necessidade de executar novamente
+            toda a etapa de clusterização sempre que uma classificação precisar
+            ser realizada.
+          decision_supported: >-
+            Em qual persona/cluster definido pelo Customer Clustering um PDV
+            deve ser classificado com base em suas características atuais.
+          users: [CRM, Trade Marketing, Marketing]
+          granularity: "PDV (customer_id)"
+          update_frequency: "Mensal"
+          plain_explanation: >-
+            O KMeans é utilizado para construir os 5 grupos originais. Depois
+            que esses grupos estão definidos, a Regressão Logística aprende as
+            características associadas a cada cluster e permite classificar PDVs
+            de forma mais simples e operacional, sem precisar reconstruir toda
+            a segmentação a cada execução.
+          known_limitations: >-
+            A Regressão Logística reproduz a estrutura de clusters previamente
+            definida pelo Customer Clustering e, portanto, depende da qualidade
+            e atualidade dessa segmentação. Caso o comportamento da população
+            mude de forma relevante, pode ser necessário reavaliar primeiro os
+            clusters de origem. A escolha do modelo Champion prioriza
+            interpretabilidade, simplicidade operacional e eficiência.
+        technical:
+          pipeline: >-
+            Feature Store tratada → Aplicação das mesmas transformações relevantes
+            do Customer Clustering → Regressão Logística Multinomial →
+            Predição de cluster → Tabela de classificação
+          model: "Regressão Logística Multinomial (Champion)"
+          model_diagram: "2_regressao_logistica.png"
+          target: "Cluster definido pelo Customer Clustering (1 a 5)"
+          observation_window: "12 meses"
+          prediction_window: "Não aplicável"
+          main_features: ["Mesmas features do Customer Clustering (ver clustering-kmeans)"]
+          validation_strategy: "Não disponível"
+          calibration_method: "StandardScaler"
+          postprocessing_rules: "Linhagem imutável com a Feature Store via FeatureLookup"
+          retraining_frequency: "Não disponível"
+        output_table:
+          name: "cust_cluster_classification_history"
+          unity_catalog_path: "uc_dev_latam_mdip_01.pbf_digitalsales_datascience.cust_cluster_classification_history"
+          execution_date_column: execution_date
+          columns:
+            - {name: CustomerId, type: string, description: "Identificador do PDV", example: "100023345"}
+            - {name: predicted_cluster, type: double, description: "Cluster predito pela Regressão Logística", example: "0.0"}
+            - {name: model_version, type: int, description: "Versão do modelo registrado", example: "1"}
+            - {name: training_run_id, type: string, description: "ID do run MLflow de treino", example: "362e2eaaf0744012bd2aa1ac6d4499e5"}
+            - {name: reference_date, type: date, description: "Data de referência da classificação", example: "2026-10-16"}
+            - {name: execution_date, type: timestamp, description: "Data e hora da execução", example: "2026-10-16 23:26:24"}
+        technical_metrics:
+          model_performance: ["Não disponível neste documento"]
+          coverage: "Não disponível neste documento"
+          operational_quality: "Código produtivo em módulos .py, seguindo princípios de IA Responsável da PepsiCo"
+          drift_stability: "Não disponível neste documento"
+        business_value:
+          note: "Ver resultados consolidados do piloto CC V2 na tela de Testes e Resultados."
+          metrics: ["Net Sales incremental", "Produtividade"]
+
+      - id: personas
+        name: Personas de PDV
+        operational_status: Live
+        last_run: "Não aplicável (tradução de negócio, não roda periodicamente)"
+        last_training: "Não aplicável"
+        reference_doc: "personas/Personas Pepsico_2906_v2.pdf"
+        overview_image: "personas/resumo_personas_jpeg.jpeg"
+        personas:
+          - cluster: 0
+            name: "Túlio Topa-Tudo"
+            avatar: "personas/avatar_tulio_0.png"
+            card_image: "personas/card_persona_0_jpeg.jpeg"
+            share_of_customers: "19%"
+            avg_annual_ticket: "R$ 20.729"
+            net_sales_share: "44%"
+            main_pdv_type: "Pequenos/médios mercados"
+            route_type: "DTS Trad/Van Sales"
+            description: >-
+              Túlio é um parceiro próximo e confiável, que mantém o negócio
+              sempre abastecido. Compra com frequência, em volumes mais altos
+              que os demais clusters e com consistência ao longo do tempo. Está
+              presente tanto no digital quanto no relacionamento com o time de
+              vendas. É estratégico e valioso para o desempenho porque lidera
+              as vendas de inovação, mantém recorrência e representa a maior
+              parte do faturamento da companhia.
+            ratings:
+              - {label: "% Faturamento PepsiCo", value: 4}
+              - {label: "% Pedidos", value: 3}
+              - {label: "% Repres. Vendas (BEES)", value: 3}
+              - {label: "% Participação em Loyalty", value: 2}
+              - {label: "Recência*", value: 5}
+              - {label: "Inovação", value: 5}
+            brand_mix: ["Doritos 17%", "Cheetos 16%", "Ruffles 7%", "Lay's 3%"]
+            traits: ["Alto volume", "Ativo no digital", "Boa recorrência", "Líder em Inovação"]
+
+          - cluster: 1
+            name: "Cláudia Cautelosa"
+            avatar: "personas/avatar_claudia_1.png"
+            card_image: "personas/card_persona_1_jpeg.jpeg"
+            share_of_customers: "16%"
+            avg_annual_ticket: "R$ 2.589"
+            net_sales_share: "4%"
+            main_pdv_type: "Bares"
+            route_type: "DTS Trad/Van Sales"
+            description: >-
+              Cláudia é uma compradora pouco ativa. Demora para recomprar, tem
+              pouca proximidade com o digital e raramente participa de ações ou
+              desafios. Também não costuma arriscar em novidades, mantendo um
+              portfólio mais básico e conhecido. Sua relação com a marca está
+              mais distante e pontual, podendo representar um risco de churn.
+            ratings:
+              - {label: "% Faturamento PepsiCo", value: 1}
+              - {label: "% Pedidos", value: 1}
+              - {label: "% Repres. Vendas (BEES)", value: 2}
+              - {label: "% Participação em Loyalty", value: 1}
+              - {label: "Recência*", value: 1}
+              - {label: "Inovação", value: 1}
+            brand_mix: ["Cheetos 20%", "Doritos 17%", "Ruffles 10%", "Lay's 3%"]
+            traits: ["Baixo volume", "Distante no digital", "Compra pontual", "Risco de churn"]
+
+          - cluster: 2
+            name: "Bruno Básico"
+            avatar: "personas/avatar_bruno_2.png"
+            card_image: "personas/card_persona_2_jpeg.jpeg"
+            share_of_customers: "25%"
+            avg_annual_ticket: "R$ 7.282"
+            net_sales_share: "20%"
+            main_pdv_type: "Farmácias"
+            route_type: "DTS Trad/Van Sales"
+            description: >-
+              Bruno compra com alta frequência, mas em volumes menores. As 4
+              principais marcas representam a maior parte de suas compras
+              PepsiCo, mas opera com baixa intensidade e pouca digitalização.
+              Costuma apostar em produtos já conhecidos do seu público, com
+              pouca adesão a inovações e tem a menor participação em ações de
+              loyalty. É bem atendido pela equipe de vendas e depende das
+              visitas DTS para seu giro de pedidos.
+            ratings:
+              - {label: "% Faturamento PepsiCo", value: 2}
+              - {label: "% Pedidos", value: 2}
+              - {label: "% Repres. Vendas (BEES)", value: 2}
+              - {label: "% Participação em Loyalty", value: 1}
+              - {label: "Recência*", value: 4}
+              - {label: "Inovação", value: 1}
+            brand_mix: ["Cheetos 23%", "Doritos 20%", "Ruffles 13%", "Lay's 3%"]
+            traits: ["Volume médio", "Baixa digitalização", "Alta recorrência", "Mais do mesmo"]
+
+          - cluster: 3
+            name: "Paty Parceria"
+            avatar: "personas/avatar_paty_3.png"
+            card_image: "personas/card_persona_3_jpeg.jpeg"
+            share_of_customers: "20%"
+            avg_annual_ticket: "R$ 7.069"
+            net_sales_share: "15%"
+            main_pdv_type: "Padarias"
+            route_type: "Pré-venda"
+            description: >-
+              Paty tem uma relação próxima com o time de vendas e está presente
+              no dia a dia da companhia. Compra com certa frequência e já
+              utiliza o digital, mas ainda apresenta baixo ticket. Costuma
+              repetir produtos já conhecidos, explora pouco as inovações e não
+              tem snacks como seu foco principal. É um cliente engajado no
+              relacionamento, mas com espaço para evoluir e diversificar suas
+              compras.
+            ratings:
+              - {label: "% Faturamento PepsiCo", value: 2}
+              - {label: "% Pedidos", value: 2}
+              - {label: "% Repres. Vendas (BEES)", value: 3}
+              - {label: "% Participação em Loyalty", value: 1}
+              - {label: "Recência*", value: 4}
+              - {label: "Inovação", value: 1}
+            brand_mix: ["Cheetos 9%", "Doritos 7%", "Ruffles 5%", "Lay's 2%"]
+            traits: ["Volume médio", "Média digitalização", "Alta recorrência", "Mais do mesmo"]
+
+          - cluster: 4
+            name: "Diego Digital"
+            avatar: "personas/avatar_diego_4.png"
+            card_image: "personas/card_persona_4_jpeg.jpeg"
+            share_of_customers: "20%"
+            avg_annual_ticket: "R$ 7.453"
+            net_sales_share: "16%"
+            main_pdv_type: "Bombonieres"
+            route_type: "Pré-venda"
+            description: >-
+              Diego é conectado, participativo e gosta de aproveitar as
+              oportunidades. Está presente no digital, interage com campanhas e
+              ações de loyalty e responde bem a estímulos da marca. Compra com
+              frequência, tem snacks como parte relevante de seus pedidos, e
+              mantém uma boa relação com o time de vendas. Ainda tem espaço
+              para crescer e pode ser estimulado a apostar mais em inovações.
+              Diego demonstra autonomia, depende pouco de visitas presenciais e
+              usa o digital para se "auto servir" quando necessário.
+            ratings:
+              - {label: "% Faturamento PepsiCo", value: 2}
+              - {label: "% Pedidos", value: 2}
+              - {label: "% Repres. Vendas (BEES)", value: 4}
+              - {label: "% Participação em Loyalty", value: 3}
+              - {label: "Recência*", value: 4}
+              - {label: "Inovação", value: 1}
+            brand_mix: ["Cheetos 20%", "Doritos 17%", "Ruffles 11%", "Lay's 4%"]
+            traits: ["Volume médio", "Líder no digital", "Alta frequência", "Autossuficiente"]
+        functional:
+          problem_solved: >-
+            Os 5 clusters do Customer Clustering são identificados por números
+            (1 a 5), o que dificulta a comunicação e o uso do resultado pelas
+            áreas de negócio e marketing no dia a dia.
+          decision_supported: >-
+            Qual arquétipo de cliente (persona) melhor representa um PDV, para
+            orientar tom de comunicação, abordagem comercial e priorização de
+            campanhas por perfil.
+          users: [CRM, Trade Marketing, Marketing, Sales]
+          granularity: "PDV (customer_id) / Cluster"
+          update_frequency: "Não aplicável — atualizada junto de revisões do Customer Clustering"
+          plain_explanation: >-
+            Não é um novo algoritmo, e sim a tradução dos 5 clusters numéricos do
+            Customer Clustering em personas com nome, rosto e características de
+            negócio — mais fáceis de entender e usar por quem não trabalha com
+            dados no dia a dia.
+          known_limitations: >-
+            As personas herdam todas as limitações do Customer Clustering (k=5
+            fixo, dependência de retraining programado) — uma mudança nos
+            clusters de origem exige revisão do mapeamento de personas.
+        technical:
+          pipeline: "Customer Clustering (cluster 1-5) → Mapeamento de negócio (nome, perfil, métricas) → Persona associada ao PDV"
+          model: "Não aplicável — camada de tradução de negócio sobre o resultado do Customer Clustering (KMeans)"
+          target: "Não aplicável"
+          observation_window: "Herdada do Customer Clustering (12 meses)"
+          prediction_window: "Não aplicável"
+          main_features: ["Cluster atribuído pelo Customer Clustering (ver clustering-kmeans)"]
+          validation_strategy: "Não aplicável"
+          calibration_method: "Não aplicável"
+          postprocessing_rules: >-
+            Mapeamento fixo cluster → persona definido em conjunto com Marketing
+            (documento "Personas Pepsico_2906_v2").
+          retraining_frequency: "Não aplicável"
+        output_table:
+          name: "Não aplicável — consome a saída do Customer Clustering (cust_cluster_predictions)"
+          unity_catalog_path: "Não aplicável"
+          columns:
+            - {name: cluster, type: int, description: "Cluster de origem (Customer Clustering)", example: "0"}
+            - {name: persona_name, type: string, description: "Nome da persona", example: "Túlio Topa-Tudo"}
+            - {name: customer_share, type: decimal, description: "% da base de clientes nessa persona", example: "0.19"}
+            - {name: avg_annual_ticket, type: decimal, description: "Ticket médio anual (R$)", example: "20729.00"}
+            - {name: net_sales_share, type: decimal, description: "% do Net Sales total representado pela persona", example: "0.44"}
+            - {name: main_pdv_type, type: string, description: "Tipo de PDV predominante na persona", example: "Pequenos/médios mercados"}
+            - {name: main_route_type, type: string, description: "Tipo de rota predominante na persona", example: "DTS Trad/Van Sales"}
+        technical_metrics:
+          model_performance: ["Não aplicável — camada de tradução de negócio, sem métrica de modelo própria"]
+          coverage: "5 personas cobrindo 100% dos clusters do Customer Clustering"
+          operational_quality: "Mapeamento estável, revisado junto da governança de Marketing"
+          drift_stability: "Acompanha o drift do Customer Clustering de origem"
+        business_value:
+          note: >-
+            As 5 personas documentadas (fonte: "Personas Pepsico_2906_v2.pdf") são:
+            Túlio Topa-Tudo (19% da base, ticket médio R$ 20.729, 44% do Net Sales,
+            alto volume e inovação, ativo no digital, pequenos/médios mercados,
+            rota DTS Trad/Van Sales); Cláudia Cautelosa (16%, R$ 2.589, 4% do NS,
+            baixo volume, distante do digital, risco de churn, bares, DTS
+            Trad/Van Sales); Bruno Básico (25%, R$ 7.282, 20% do NS, alta
+            frequência e volume médio, baixa digitalização, dependente de visitas
+            DTS, farmácias, DTS Trad/Van Sales); Paty Parceria (20%, R$ 7.069, 15%
+            do NS, relação próxima com vendas, baixo ticket, pouca inovação,
+            padarias, Pré-venda); Diego Digital (20%, R$ 7.453, 16% do NS, líder
+            digital, alta frequência, autossuficiente, bombonieres, Pré-venda).
+          metrics: ["Adoção por área de negócio", "Uso em campanhas de CRM/Marketing"]
+
+  - id: portfolio-segmentation
+    name: Portfolio Segmentation
+    code: "PS 2.1, 2.2, 2.3, 2.4"
+    phase: sustain
+    operational_status: Test
+    module: Produto
+    consuming_areas: [Trade, Growth, Digital Sales, Marketing]
+    business_owner: Victor Vidal (PO)
+    technical_owner: Leonardo Damasio (DS Lead)
+    description: >-
+      Identifica oportunidades de expansão de portfólio por cliente e
+      produto, combinando score de afinidade (SVD), score de propensão
+      (árvore de decisão), quantidade recomendada e faixas de quantidade.
+    business_objective: >-
+      Priorizar produtos com maior oportunidade de ativação ou crescimento
+      em cada PDV, alimentando Tasks e Suggested Order.
+    tables:
+      - "Feature Store (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.fs_propensity_score, uc_dev_latam_mdip_01.pbf_digitalsales_datascience.fs_quantity_score)"
+      - "Affinity Score (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.affinity_score_predictions)"
+      - "Propensity Scores (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.propensity_score_predictions)"
+      - "Quantity SCore (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.quantity_score_predictions)"
+      - "Product Code (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.product_code_mapping)"
+      - "Sales ADAN predictions (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.sales_adan_predictions)"
+    consumption: [Databricks SQL, Sales Intell Dashboard, Input para outros modelos]
+    source_docs:
+      - "Não Disponível"
+    algorithms:
+      - id: affinity-score-svd
+        name: Affinity Score (SVD)
+        operational_status: Test
+        phase_since: "2026-04"
+        last_run: "2026-11-17"
+        last_training: "2026-11-17"
+        registered_model:
+          name: "ml_model_affinity_score"
+          unity_catalog_path: "uc_dev_latam_mdip_01.pbf_digitalsales_datascience.ml_model_affinity_score"
+          champion_version: 77
+          challenger_version: 34
+          latest_version: 77
+        functional:
+          problem_solved: >-
+            Estima o grau de afinidade entre um PDV e um produto a partir do
+            comportamento histórico de compra, ajudando a identificar itens
+            aderentes ao perfil de consumo do cliente mesmo quando eles não
+            aparecem de forma evidente em regras comerciais simples.
+          decision_supported: >-
+            Quais produtos apresentam maior aderência ao perfil de compra de cada
+            PDV e, portanto, devem ser considerados como candidatos à expansão
+            de mix e à priorização comercial.
+          users: [Trade, Growth, Digital Sales]
+          granularity: "Cliente-Produto (ProductCombinedCode)"
+          update_frequency: "Não disponível"
+          plain_explanation: >-
+            O modelo transforma o histórico de compras de clientes e produtos em
+            representações numéricas. Ao comparar essas representações, identifica
+            quais produtos são mais compatíveis com o padrão de consumo de cada
+            PDV. O Affinity responde principalmente à pergunta: "quanto este
+            produto combina com o perfil deste cliente?"
+          known_limitations: >-
+            Nesta versão, o treinamento utiliza exclusivamente o recorte
+            Business Unit = Salty, ProductCategory IN (Elma, Lucky) e
+            IsActive = True. Portanto, os resultados e métricas observados não
+            devem ser automaticamente generalizados para outras unidades de
+            negócio, categorias ou populações sem nova validação.
+        technical:
+          pipeline: >-
+            Feature Store → Filtro de população (Salty / Elma, Lucky / ativos) →
+            Construção da matriz cliente-produto → Fatoração de Matrizes (SVD) →
+            Embeddings/representações latentes → Cálculo do Affinity Score →
+            Ranking/recomendações → Disponibilização para componentes downstream
+          model: "SVD 3.3 (Singular Value Decomposition) — modelo campeão no experimento documentado"
+          model_diagram: "3_svd_afinidade.png"
+          target: "Score de afinidade cliente-produto"
+          observation_window: "Não disponível"
+          prediction_window: "Não aplicável"
+          main_features:
+            - "ProductCombinedCode (produto agrupado, não SKU — neutraliza mudanças de gramatura/PackPricing)"
+            - "Volume de compra (não binário — captura intensidade da preferência)"
+          validation_strategy: "Comparação entre SVD 3.3, ALS 5.2 e NMF 4.2"
+          calibration_method: "Não disponível"
+          postprocessing_rules: "Embeddings salvos como entrada estável para o modelo de propensão (Camada 2)"
+          retraining_frequency: "Não disponível"
+        output_table:
+          name: "affinity_score_predictions"
+          unity_catalog_path: "uc_dev_latam_mdip_01.pbf_digitalsales_datascience.affinity_score_predictions"
+          execution_date_column: ExecutionDate
+          columns:
+            - {name: CustomerId, type: string, description: "Identificador do PDV", example: "100064358"}
+            - {name: ProductCode, type: string, description: "Código do produto", example: "041_073_38_05"}
+            - {name: ProductInfo, type: string, description: "Descrição do produto", example: "RUFFLES SALT PRA JÁ BAG"}
+            - {name: Affinity, type: double, description: "Score estimado de afinidade cliente-produto", example: "0.0000049"}
+            - {name: AffinityQuantile, type: int, description: "Quantil do score de afinidade", example: "7"}
+            - {name: ModelVersion, type: string, description: "Versão do modelo", example: "v3.5"}
+            - {name: ReferenceDate, type: date, description: "Data de referência dos dados", example: "2026-08-09"}
+            - {name: ExecutionDate, type: date, description: "Data de execução", example: "2026-11-10"}
+        technical_metrics:
+          model_performance:
+            - "Precision@10: 93,89%"
+            - "RMSE: 2,71%"
+            - "nDCG@10: 98,52%"
+          coverage: "Treinado sobre 192 mil PDVs, 138 produtos agrupados"
+          operational_quality: "Implementação em Spark, otimizada para esparsidade de matriz"
+          drift_stability: "Não disponível neste documento"
+        business_value:
+          note: "Compõe o Priority Score junto com o Propensity Score."
+          metrics: ["Net Sales incremental", "Penetração de portfólio", "Completude de ofertas"]
+
+      - id: propensity-score-tree
+        name: Propensity Score (Árvore de Decisão)
+        operational_status: Test
+        phase_since: "2026-05"
+        last_run: "2026-11-17"
+        last_training: "2026-11-17"
+        registered_model:
+          name: "ml_model_propensity_score"
+          unity_catalog_path: "uc_dev_latam_mdip_01.pbf_digitalsales_datascience.ml_model_propensity_score"
+          champion_version: 20
+          challenger_version: null
+          latest_version: 20
+        functional:
+          problem_solved: >-
+            Estima a probabilidade de compra de um produto por um PDV em um
+            período futuro, permitindo diferenciar oportunidades com maior ou
+            menor chance de conversão.
+          decision_supported: >-
+            Priorizar oportunidades comerciais por combinação cliente-produto,
+            apoiando a seleção de ofertas, o Portfolio Segmentation e outros
+            mecanismos de priorização comercial.
+          users: [Trade, Digital Sales, Growth]
+          granularity: "Cliente-Produto"
+          update_frequency: "Não disponível"
+          plain_explanation: >-
+            Enquanto o Affinity Score responde quanto um produto combina com o
+            perfil do PDV, o Propensity Score estima a chance de compra desse
+            produto pelo cliente no horizonte definido pelo modelo. O score
+            ajuda a concentrar esforço comercial nas oportunidades com maior
+            probabilidade estimada de conversão.
+          known_limitations: >-
+            O experimento selecionado prioriza Recall relativamente à maximização
+            de Precisão, buscando capturar maior parcela das oportunidades
+            potenciais. Isso implica aceitar uma quantidade maior de falsos
+            positivos em troca de reduzir oportunidades relevantes não
+            identificadas. O horizonte exato associado à probabilidade ainda
+            precisa ser explicitado na documentação.
+        technical:
+          pipeline: >-
+            Feature Store → Tratamento de missings e outliers
+            (capping 1%-99%) → Seleção/redução de features →
+            Controle de colinearidade (>0.9) → Tratamento de desbalanceamento →
+            Decision Tree → Propensity Score → Classificação/priorização downstream
+          model: >-
+            Decision Tree (experimento 2.3 / script v2.3), selecionada a partir
+            de comparação com alternativas como Logistic Regression e
+            Random Forest.
+          model_diagram: "4_arvore_propensao.png"
+          target: "Probabilidade estimada de compra (0-1) de um produto por um PDV"
+          observation_window: "Até 365 dias (janela de recência)"
+          prediction_window: "Próximo período (não especificado em dias neste documento)"
+          main_features:
+            - "RecenciaProduto (recência de compra do produto)"
+            - "NetSales / NetSalesProduto"
+            - "Cluster (CC V2) e BairroCode"
+          validation_strategy: "Mais de 23 milhões de modelos customizados (combinação PDV x Produto), métricas médias por experimento"
+          calibration_method: "Não disponível"
+          postprocessing_rules: >-
+            Missings de variáveis transacionais tratados como valor máximo da
+            janela (nunca comprou); missings categóricos rotulados como
+            "Desconhecido"
+          retraining_frequency: "Não disponível"
+        output_table:
+          name: "propensity_score_predictions (métricas em metrics_propensity_score)"
+          unity_catalog_path: "uc_dev_latam_mdip_01.pbf_digitalsales_datascience.propensity_score_predictions"
+          execution_date_column: ExecutionDate
+          columns:
+            - {name: CustomerId, type: string, description: "Identificador do PDV", example: "100023253"}
+            - {name: ProductCode, type: string, description: "Código do produto", example: "041_005_37_05"}
+            - {name: ProductInfo, type: string, description: "Descrição do produto", example: "RUFFLES BBQ PRA GENTE BAG"}
+            - {name: PropensityScore, type: double, description: "Probabilidade estimada de compra", example: "0.46"}
+            - {name: PropensityQuantile, type: int, description: "Quantil do score de propensão", example: "5"}
+            - {name: PredictedCluster, type: long, description: "Cluster do PDV (CC V2)", example: "1"}
+            - {name: ReferenceDate, type: date, description: "Data de referência dos dados", example: "2026-11-16"}
+            - {name: ExecutionDate, type: date, description: "Data de execução", example: "2026-11-17"}
+        technical_metrics:
+          model_performance:
+            - "ROC-AUC: 80,00% (experimento 2.3, selecionado)"
+            - "F1-Score: 69,00%"
+            - "Precisão: 66,00%"
+            - "Recall: 73,00%"
+            - "Acurácia: 73,00%"
+          coverage: "Scoring individual para 233 mil PDVs"
+          operational_quality: "Árvore de decisão escolhida por menor custo de DBU/tempo de inferência vs. Random Forest"
+          drift_stability: "Não disponível neste documento"
+        business_value:
+          note: "Compõe o Priority Score e alimenta diretamente o Portfólio Prioritário (Tasks)."
+          metrics: ["Net Sales incremental", "Penetração de portfólio", "Conversão"]
+
+      - id: product-quantity
+        name: Product Quantity (Quantidade Ideal)
+        operational_status: Test
+        phase_since: "2026-06"
+        last_run: "2026-11-17"
+        last_training: "2026-11-17"
+        registered_model:
+          name: "ml_model_quantity_score"
+          unity_catalog_path: "uc_dev_latam_mdip_01.pbf_digitalsales_datascience.ml_model_quantity_score"
+          champion_version: 14
+          challenger_version: null
+          latest_version: 14
+        functional:
+          problem_solved: >-
+            Complementa a recomendação de produto estimando a quantidade mais
+            adequada a ser sugerida para uma combinação cliente-produto,
+            considerando o comportamento histórico disponível.
+          decision_supported: >-
+            Qual quantidade associar a uma recomendação de produto para um PDV,
+            adicionando uma dimensão de volume à decisão de "o que recomendar".
+          users: [Trade, Growth, Digital Sales]
+          granularity: "Cliente-Produto"
+          update_frequency: "Não disponível neste documento"
+          plain_explanation: >-
+            Affinity e Propensity ajudam a identificar quais produtos fazem mais
+            sentido para o PDV. Product Quantity adiciona uma nova pergunta:
+            "quanto recomendar?". O objetivo é transformar uma oportunidade de
+            produto em uma recomendação comercial mais completa, associando-a a
+            uma quantidade sugerida.
+          known_limitations: >-
+            A documentação disponível ainda não detalha o algoritmo utilizado,
+            unidade exata da quantidade, features, horizonte, regras de negócio
+            ou métricas de validação. Portanto, o output deve ser interpretado
+            como uma recomendação operacional cuja metodologia técnica precisa
+            ser complementada antes de análises aprofundadas de performance.
+        technical:
+          pipeline: >-
+            Feature Store / inputs do Portfolio Segmentation →
+            Modelo ou lógica de Quantidade Ideal (XGBoost) →
+            Quantidade recomendada por cliente-produto →
+            Consumo por componentes downstream
+          model: "XGBoost (ensemble de árvores de regressão) — estimativa de quantidade ideal por cliente-produto"
+          model_diagram: "5_xgboost_quantidade.png"
+          target: >-
+            Quantidade recomendada por cliente-produto. A unidade operacional
+            exata deve ser confirmada na documentação de origem.
+          observation_window: "Não disponível"
+          prediction_window: "Não disponível"
+          main_features: ["Não disponível neste documento"]
+          validation_strategy: "Não disponível neste documento"
+          calibration_method: "Não disponível"
+          postprocessing_rules: "Não disponível"
+          retraining_frequency: "Não disponível"
+        output_table:
+          name: "quantity_score_predictions"
+          unity_catalog_path: "uc_dev_latam_mdip_01.pbf_digitalsales_datascience.quantity_score_predictions"
+          execution_date_column: inference_timestamp
+          column_selection: curated
+          columns:
+            - {name: CustomerId, type: string, description: "Identificador do PDV", example: "100023227"}
+            - {name: ProductCode, type: string, description: "Código do produto", example: "084_284_39_05"}
+            - {name: ProductBrand, type: string, description: "Marca do produto", example: "SENSACOES"}
+            - {name: ConsumptionMoment, type: string, description: "Momento de consumo", example: "PRA MIM"}
+            - {name: CustomerGroupGTMTypology, type: string, description: "Tipologia GTM do cliente", example: "AS 01 A 04 CHECK-OUT"}
+            - {name: PredictedQuantity, type: long, description: "Quantidade ideal recomendada (arredondada)", example: "16"}
+            - {name: PredictedQuantityRaw, type: double, description: "Quantidade prevista bruta do modelo", example: "15.76"}
+            - {name: reference_date, type: date, description: "Data de referência dos dados", example: "2026-10-01"}
+            - {name: PredictionDate, type: date, description: "Mês alvo da predição", example: "2026-11-01"}
+            - {name: model_version, type: string, description: "Versão do modelo registrado", example: "14"}
+            - {name: model_registration_run_id, type: string, description: "ID do run MLflow de registro do modelo", example: "bdf887eb191e4227a8880f33e9d00cb1"}
+            - {name: inference_run_id, type: string, description: "ID do run de inferência", example: "6b3bff25f190477ea28afa3f8f3a9c3e"}
+            - {name: inference_timestamp, type: timestamp, description: "Data e hora da inferência", example: "2026-11-17 15:45:54"}
+        technical_metrics:
+          model_performance: ["Não disponível neste documento"]
+          coverage: "Não disponível neste documento"
+          operational_quality: "Não disponível neste documento"
+          drift_stability: "Não disponível neste documento"
+        business_value:
+          note: "Compõe a recomendação de quantidade do Portfolio Segmentation, consumida pelo Suggested Order."
+          metrics: ["Net Sales incremental", "Completude de ofertas"]
+
+      - id: quantity-bands
+        name: Quantity Bands (Faixas de Quantidade)
+        operational_status: Test
+        phase_since: "2026-07"
+        last_run: "2026-11-17"
+        last_training: "2026-11-17"
+        registered_model:
+          name: "ml_model_quantity_score"
+          unity_catalog_path: "uc_dev_latam_mdip_01.pbf_digitalsales_datascience.ml_model_quantity_score"
+          champion_version: 14
+          challenger_version: null
+          latest_version: 14
+        functional:
+          problem_solved: >-
+            Traduz recomendações quantitativas em faixas operacionais mais
+            simples de interpretar e executar nos diferentes canais e casos
+            de uso comerciais.
+          decision_supported: >-
+            Em qual faixa de volume posicionar a recomendação gerada para uma
+            combinação cliente-produto.
+          users: [Trade, Growth]
+          granularity: "Cliente-Produto"
+          update_frequency: "Não disponível neste documento"
+          plain_explanation: >-
+            O Product Quantity gera uma recomendação de quantidade. O Quantity
+            Bands transforma esse resultado em faixas operacionais mais simples,
+            permitindo comunicar o nível de volume recomendado sem depender
+            exclusivamente de um valor numérico exato.
+          known_limitations: >-
+            Os thresholds e critérios utilizados para construção das faixas não
+            estão disponíveis neste documento. Enquanto essa definição não estiver
+            documentada, as faixas devem ser entendidas como uma transformação
+            operacional do Product Quantity e não como uma previsão independente.
+        technical:
+          pipeline: "Product Quantity (XGBoost) → Aplicação dos critérios de discretização → Quantity Bands → Consumo downstream"
+          model: >-
+            Discretização determinística sobre a saída do Product Quantity
+            (XGBoost); não há componente estatístico/modelo adicional próprio.
+          target: "Faixa operacional de quantidade associada à recomendação cliente-produto"
+          observation_window: "Não disponível"
+          prediction_window: "Não disponível"
+          main_features: ["Quantidade recomendada (Product Quantity)"]
+          validation_strategy: "Não disponível neste documento"
+          calibration_method: "Não disponível"
+          postprocessing_rules: "Não disponível"
+          retraining_frequency: "Não disponível"
+        output_table:
+          name: "quantity_score_predictions (colunas de faixas FDP)"
+          unity_catalog_path: "uc_dev_latam_mdip_01.pbf_digitalsales_datascience.quantity_score_predictions"
+          execution_date_column: inference_timestamp
+          column_selection: curated
+          columns:
+            - {name: CustomerId, type: string, description: "Identificador do PDV", example: "100023227"}
+            - {name: ProductCode, type: string, description: "Código do produto", example: "084_284_39_05"}
+            - {name: FDPMethod, type: string, description: "Método de construção das faixas", example: "symmetric_5_point"}
+            - {name: fdp_delta, type: long, description: "Passo (unidades) entre as faixas", example: "2"}
+            - {name: FDP_QMinus2, type: long, description: "Quantidade da faixa -2", example: "12"}
+            - {name: FDP_QMinus1, type: long, description: "Quantidade da faixa -1", example: "14"}
+            - {name: FDP_QStar, type: long, description: "Quantidade central (recomendada)", example: "16"}
+            - {name: FDP_QPlus1, type: long, description: "Quantidade da faixa +1", example: "18"}
+            - {name: FDP_QPlus2, type: long, description: "Quantidade da faixa +2", example: "20"}
+            - {name: FDP_PMinus2, type: double, description: "Probabilidade da faixa -2", example: "0.1"}
+            - {name: FDP_PMinus1, type: double, description: "Probabilidade da faixa -1", example: "0.2"}
+            - {name: FDP_PStar, type: double, description: "Probabilidade da faixa central", example: "0.4"}
+            - {name: FDP_PPlus1, type: double, description: "Probabilidade da faixa +1", example: "0.2"}
+            - {name: FDP_PPlus2, type: double, description: "Probabilidade da faixa +2", example: "0.1"}
+            - {name: FDPExpectedQuantity, type: double, description: "Quantidade esperada da distribuição", example: "16.0"}
+            - {name: QuantityDistribution, type: array, description: "Distribuição completa (cenário, quantidade, probabilidade)", example: "[{scenario: q_minus_2, quantity: 12, ...}]"}
+        technical_metrics:
+          model_performance: ["Não disponível neste documento"]
+          coverage: "Não disponível neste documento"
+          operational_quality: "Não disponível neste documento"
+          drift_stability: "Não disponível neste documento"
+        business_value:
+          note: "Facilita a comunicação comercial da quantidade recomendada, usada no Suggested Order e no dashboard de Sales Intelligence."
+          metrics: ["Completude de ofertas", "Produtividade"]
+
+  - id: target-intelligence
+    name: Metas (Target Intelligence)
+    code: "MT 8.1"
+    phase: poc
+    operational_status: WIP
+    module: Vendedor
+    consuming_areas: [DTS, Sales Intelligence, Trade]
+    business_owner: Thiago Ardito
+    technical_owner: Leonardo Damasio (DS Lead)
+    description: >-
+      Cálculo das metas do próximo período a partir do potencial real de
+      venda do PDV, combinando os outputs dos demais algoritmos do Sales
+      ADAN em um modelo de build-up bottom-up.
+    business_objective: >-
+      Maximizar a acurácia da distribuição de metas a partir do potencial
+      real de venda do PDV, sem penalizar a remuneração variável dos
+      vendedores nem automatizar o processo atual na v1.
+    tables:
+      - "Não Disponível"
+    consumption: [Databricks SQL]
+    source_docs:
+      - "Não Disponível"
+    algorithms:
+      - id: goals-potential-model
+        name: Modelo de Potencial de PDV (Build-up Bottom-up)
+        operational_status: WIP
+        phase_since: "2026-12"
+        last_run: "Não disponível (ainda não produtivo)"
+        last_training: "Não disponível"
+        functional:
+          problem_solved: >-
+            Evoluir a distribuição de metas comerciais atualmente baseada em
+            médias e etapas manuais, incorporando estimativas de potencial mais
+            aderentes à realidade de PDVs e rotas, especialmente em cenários
+            voláteis ou com histórico limitado.
+          decision_supported: >-
+            Qual potencial/meta associar a PDVs e rotas como referência para
+            o processo de cascateamento, permitindo comparar uma abordagem
+            bottom-up com o processo atualmente utilizado.
+          users: ["Gestor DTS", "Vendedor DTS/OT", "Time de Sales Intelligence"]
+          granularity: "PDV / Rota"
+          update_frequency: "Ciclo de cascateamento (OT: 6 meses | DTS: 3 meses + sazonalidade 70/30)"
+          plain_explanation: >-
+            Em vez de depender somente da distribuição top-down da meta, a
+            proposta estima o potencial a partir da realidade dos PDVs e rotas
+            e constrói uma visão de baixo para cima. Na primeira versão, essa
+            estimativa funciona como challenger e referência comparativa, sem
+            substituir automaticamente o processo oficial.
+          known_limitations: >-
+            Em fase de PoC: a abordagem é explicitamente champion-challenger e
+            não automatiza nem substitui o cascateamento atual. O modelo ainda
+            depende de validação estatística, qualidade das fontes, regras de
+            cold start e alinhamento das regras de reconciliação com as metas
+            corporativas.
+        technical:
+          pipeline: >-
+            Data Contracts (schema + owner + SLA por fonte) →
+            Construção das séries históricas →
+            ARIMA/SARIMA como hipótese de forecast H1 →
+            Tratamento de cold start com apoio do Cluster CC V2 →
+            Agregação/build-up por rota →
+            Explicabilidade (XAI) →
+            Comparação com processo atual (backtest 3 meses com Customer Clustering e Portfolio Segmentation)
+          model: >-
+            ARIMA/SARIMA como hipótese inicial de forecast, submetida a backtest
+            contra a média simples utilizada como baseline. O conceito
+            "bottom-up" representa a estratégia de construção/agregação das metas,
+            não o algoritmo de forecast isoladamente.
+          target: "Potencial/meta de venda (Volume / Net Sales) por PDV ou rota"
+          observation_window: "Backtest retroativo de 3 meses"
+          prediction_window: "Próximo ciclo de cascateamento"
+          main_features: ["Histórico de venda por rota", "Cluster", "Affinity", "Propensity", "Quantity"]
+          validation_strategy: "Backtest retroativo de 3 meses com teste A/B entre resultados sales adan vs. Média Simples"
+          calibration_method: "Não disponível"
+          postprocessing_rules: "Não disponível"
+          retraining_frequency: "Não disponível"
+        output_table:
+          name: "Tabela de metas (exemplo de schema)"
+          unity_catalog_path: "Não disponível neste documento"
+          columns:
+            - {name: COD_DIV, type: string, description: "Código da divisão", example: "DIV_01"}
+            - {name: COD_EQ, type: string, description: "Código da equipe/rota", example: "EQ_1234"}
+            - {name: CLASSE_CLIENTE, type: string, description: "Classe do cliente", example: "A"}
+            - {name: SUBMARCA, type: string, description: "Submarca", example: "ELMA"}
+            - {name: META_VOL_GROSS, type: decimal, description: "Meta de volume bruto", example: "1250.0"}
+            - {name: META_NS_NET, type: decimal, description: "Meta de Net Sales líquido", example: "48500.00"}
+        technical_metrics:
+          model_performance: ["Não disponível"]
+          coverage: "Não disponível (pré-piloto)"
+          operational_quality: "0% das cargas com validação automática hoje — meta é chegar a 100% (Data Contracts)"
+          drift_stability: "Não aplicável (modelo ainda não produtivo)"
+        business_value:
+          note: >-
+            PoC é champion-challenger, não substituição — valor medido por
+            comparação de remuneração variável e SLA de publicação.
+          metrics: ["Não disponível"]
+
+  - id: portfolio-prioritario
+    name: Portfólio Prioritário para Ofertas
+    code: "PP"
+    phase: mvp
+    operational_status: Test
+    module: Execução
+    consuming_areas: [Sales, Trade, DTS]
+    business_owner: Francisco Maron
+    technical_owner: Leonardo Damasio (DS Lead)
+    description: >-
+      Define, para cada PDV, o ranking de 1-10 de ofertas de produtos a
+      serem executadas pelo vendedor, combinando Momentum, Affinity Score
+      e Propensity Score em um score composto.
+    business_objective: >-
+      Direcionar a melhor ação comercial por PDV, testando em piloto 100%
+      algorítmico (sem ajuste humano) se o modelo sozinho atinge o
+      resultado esperado.
+    tables:
+      - "Portfolio Prioritario Score (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.propensity_score_predictions)"
+      - "Sales ADAN predictions (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.sales_adan_predictions)"
+    consumption: [Databricks SQL, Sales Intell Dashboard, Input para BEES Force]
+    source_docs:
+      - "Não Disponível"
+    algorithms:
+      - id: portfolio-prioritario-score
+        name: Portfólio Prioritário (Score Composto)
+        operational_status: Test
+        phase_since: "2026-08"
+        last_run: "2026-11-02"
+        last_training: "Não aplicável (score composto, sem modelo registrado)"
+        functional:
+          problem_solved: >-
+            Converte diferentes sinais analíticos em uma lista priorizada de
+            oportunidades de produto para cada PDV, ajudando o vendedor a decidir
+            onde concentrar sua abordagem comercial.
+          decision_supported: >-
+            Quais produtos devem ser priorizados para cada PDV e em qual ordem,
+            servindo também como insumo para geração/distribuição de tasks.
+          users: [Sales, Trade, DTS]
+          granularity: "PDV x Produto"
+          update_frequency: "Não disponível"
+          plain_explanation: >-
+            O Portfólio Prioritário reúne diferentes sinais do Sales ADAN,
+            incluindo Momentum, Affinity e Propensity, para ordenar oportunidades
+            de produto para cada PDV. Depois do cálculo, regras operacionais evitam
+            concentração excessiva das primeiras posições em uma única marca e
+            complementam informações ausentes quando necessário.
+          known_limitations: >-
+            Na validação mais recente documentada, o componente de Momentum
+            apresentou 0% de cobertura devido a incompatibilidade de chave no join
+            (ProductFk utilizado como ProductCode). A correção e nova validação
+            da cobertura são pré-requisitos para interpretar de forma adequada
+            os resultados do piloto 100% algorítmico.
+        technical:
+          pipeline: >-
+            salespbf + products + affinity_score_predictions →
+            Join/cálculo de Momentum via ProductCode →
+            Integração dos sinais Momentum + Affinity + PropensityScore →
+            Cálculo do Score_Base / ranking →
+            Agregação e regras de diversidade por marca →
+            Fallbacks de atributos operacionais →
+            portfolio_priority_score
+          model: >-
+            Score composto baseado em múltiplos sinais analíticos
+            (Momentum + Affinity Score + Propensity Score), complementado por
+            regras de negócio e pós-processamento. Não representa um único
+            modelo independente de Machine Learning.
+          target: "Ranking de até 20 oportunidades de produto por PDV (priority_rank)"
+          observation_window: "Não disponível"
+          prediction_window: "Não disponível"
+          main_features: ["Momentum — sinal de comportamento recente do produto", "Affinity Score — aderência cliente-produto", "PropensityScore — probabilidade estimada de compra", "Delta YoY/MoM — variação de momentum ano/mês contra ano/mês anterior"]
+          validation_strategy: "Check de cobertura do join (meta ≥ 90% dos ProductCode)"
+          calibration_method: >-
+            Fallback por bin de afinidade: quantidade ausente = baseline 5;
+            desconto e dificuldade ausentes = derivados de 5 bins de afinidade
+            do PDV (maior afinidade → menor desconto/dificuldade)
+          postprocessing_rules: >-
+            Decisões tomadas pelo time de Digital Sales
+          retraining_frequency: "Não disponível"
+        output_table:
+          name: "portfolio_priority_score"
+          unity_catalog_path: "uc_dev_latam_mdip_01.pbf_digitalsales_datascience.portfolio_priority_score"
+          execution_date_column: ExecutionDate
+          columns:
+            - {name: CustomerId, type: string, description: "Identificador do PDV", example: "100023738"}
+            - {name: ProductCode, type: string, description: "Código(s) do produto (agregados por ' | ')", example: "132_088_37_05 | 132_088_39_05"}
+            - {name: ProductInfo, type: string, description: "Descrição do(s) produto(s)", example: "CHEETOS WHITE CHEDDAR PRA GENTE BAG + ..."}
+            - {name: ProductBrand, type: string, description: "Marca do produto", example: "CHEETOS"}
+            - {name: AggregatedProductsCount, type: int, description: "Qtde de produtos agregados na linha", example: "22"}
+            - {name: PredictedCluster, type: int, description: "Cluster do PDV", example: "0"}
+            - {name: Persona, type: string, description: "Persona do cluster", example: "Tulio Topa-Tudo"}
+            - {name: Rank_Produto, type: int, description: "Posição no ranking (1-20)", example: "1"}
+            - {name: Score_Final, type: double, description: "Score final de prioridade", example: "0.80"}
+            - {name: Score_Base, type: double, description: "0.5 x Afinidade normalizada + 0.5 x Propensão", example: "0.90"}
+            - {name: Fit_Cluster, type: double, description: "Percentil do Score_Base no cluster do PDV", example: "0.90"}
+            - {name: Momentum, type: double, description: "0.6 x Delta MoM + 0.4 x Delta YoY, reescalado 0-1", example: "0.40"}
+            - {name: AffinityScore, type: double, description: "Score de afinidade", example: "0.50"}
+            - {name: norm_affinity, type: double, description: "Afinidade normalizada", example: "0.90"}
+            - {name: Propensity_Score, type: double, description: "Score de propensão", example: "0.46"}
+            - {name: Justificativa, type: string, description: "Justificativa do ranking", example: "Sinal Moderado"}
+            - {name: PredictedQuantity, type: long, description: "Quantidade recomendada", example: "289"}
+            - {name: Discount, type: string, description: "Desconto sugerido", example: "6%"}
+            - {name: TaskDifficulty, type: string, description: "Dificuldade da tarefa", example: "medium"}
+            - {name: Affinity_Bin, type: int, description: "Bin de afinidade usado no fallback (1-5)", example: "3"}
+            - {name: AffinityForFallback, type: double, description: "Afinidade usada para os fallbacks", example: "0.50"}
+            - {name: QuantityImputed, type: boolean, description: "Quantidade imputada por fallback", example: "true"}
+            - {name: DiscountImputed, type: boolean, description: "Desconto imputado por fallback", example: "true"}
+            - {name: TaskDifficultyImputed, type: boolean, description: "Dificuldade imputada por fallback", example: "true"}
+            - {name: SalesGroupCode, type: string, description: "Código do grupo de vendas (RAC)", example: "CC8"}
+            - {name: Directorship, type: string, description: "Diretoria (RAC)", example: "DTS"}
+            - {name: SalesOfficeDescription, type: string, description: "Escritório de vendas (RAC)", example: "SUL DSD II"}
+            - {name: CDVDescription, type: string, description: "CDV (RAC)", example: "CDV MARINGA"}
+            - {name: CustomerState, type: string, description: "UF do cliente (RAC)", example: "PR"}
+            - {name: CustomerCity, type: string, description: "Cidade do cliente (RAC)", example: "Loanda"}
+            - {name: CustomerGroupGTMTypology, type: string, description: "Tipologia GTM do cliente (RAC)", example: "AS 05 A 09 CHECK-OUT"}
+            - {name: reference_date, type: date, description: "Data de referência", example: "2026-10-01"}
+            - {name: PredictionDate, type: date, description: "Mês alvo da predição", example: "2026-10-01"}
+            - {name: ExecutionDate, type: date, description: "Data de execução", example: "2026-11-02"}
+        technical_metrics:
+          model_performance: ["Cobertura do join de Momentum: meta ≥ 90% (0% na última validação, correção em curso)"]
+          coverage: "Piloto cobre 50% da base de clientes de Sorocaba ou Campinas (SPDTS2)"
+          operational_quality: "Piloto rígido: nenhum ajuste manual de input durante a execução (1-2 meses)"
+          drift_stability: "Não disponível neste documento"
+        business_value:
+          note: >-
+            Piloto 100% algorítmico mede se o produto de ML sozinho atinge a
+            finalidade para a qual foi desenhado, comparado a grupo controle.
+          metrics: ["Efetividade de tasks", "Net Sales incremental", "Volume incremental"]
+
+  - id: tasks
+    name: Tasks
+    code: "TK 3.1, 3.2"
+    phase: poc
+    operational_status: WIP
+    module: Execução
+    consuming_areas: [Sales, Trade, DTS]
+    business_owner: Emilio Say
+    technical_owner: Leonardo Damasio (DS Lead)
+    description: >-
+      Define a quantidade de tarefas comerciais recomendadas por vendedor e
+      o score de efetividade de cada tarefa, para apoiar a alocação e
+      priorização de visitas por PDV.
+    business_objective: >-
+      Dimensionar a carga de tarefas de cada vendedor de forma realista,
+      equilibrando potencial comercial e efetividade esperada de execução
+      em campo.
+    tables:
+      - "Tasks Quantity Score (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.task_quantity_predictions)"
+    consumption: [Databricks SQL, Integração no BEES]
+    source_docs:
+      - "Não Disponível"
+    algorithms:
+      - id: tasks-effectiveness
+        name: Tasks Effectiveness (Score de Efetividade)
+        operational_status: WIP
+        phase_since: "2026-11"
+        last_run: "Não disponível"
+        last_training: "Não disponível"
+        functional:
+          problem_solved: >-
+            Criar um critério analítico para estimar a efetividade esperada de
+            uma tarefa comercial antes ou durante sua priorização, reduzindo a
+            dependência exclusiva de regras fixas ou ordenação manual.
+          decision_supported: >-
+            Qual tarefa apresenta maior potencial de efetividade e como esse sinal
+            pode contribuir para outros mecanismos de priorização do Sales ADAN.
+          users: [Sales, Trade, DTS]
+          granularity: "Vendedor / PDV / Tarefa"
+          update_frequency: "Não disponível neste documento"
+          plain_explanation: >-
+            O objetivo é estimar quais tarefas têm maior chance de produzir o
+            resultado comercial esperado. Esse score pode ser utilizado tanto
+            no próprio produto Tasks quanto como sinal complementar em outros
+            algoritmos e mecanismos de priorização do Sales ADAN.
+          known_limitations: >-
+            Produto em PoC com desenvolvimento iniciado em Nov/2026. A definição
+            técnica do target, das features, do modelo e das métricas ainda não
+            está consolidada na documentação consultada. Antes de interpretar o
+            score, é necessário definir explicitamente o que representa uma
+            "task efetiva" e qual é a janela de observação da conversão.
+        technical:
+          pipeline: "Não disponível neste documento — produto em PoC"
+          model: "Não disponível neste documento"
+          target: >-
+            Score de efetividade da tarefa. A definição do evento positivo ainda
+            deve ser consolidada (por exemplo: conclusão, conversão, compra do
+            produto ou outro resultado de negócio).
+          observation_window: "Não disponível"
+          prediction_window: "Não disponível"
+          main_features: ["Não disponível neste documento"]
+          validation_strategy: "Não disponível neste documento"
+          calibration_method: "Não disponível"
+          postprocessing_rules: "Score integrado como input de outros algoritmos do portfólio (ex: Portfólio Prioritário)"
+          retraining_frequency: "Não disponível"
+        output_table:
+          name: "Não disponível neste documento"
+          unity_catalog_path: "Não disponível"
+          columns: []
+        technical_metrics:
+          model_performance: ["Não disponível neste documento — produto em PoC"]
+          coverage: "Não disponível neste documento"
+          operational_quality: "Não disponível neste documento"
+          drift_stability: "Não disponível neste documento"
+        business_value:
+          note: >-
+            Produto em PoC (início Nov/2026) — valor de negócio ainda não
+            mensurado.
+          metrics: ["Não disponível neste documento"]
+
+      - id: tasks-quantity
+        name: Tasks Quantity (Recomendação de Quantidade de Tarefas)
+        operational_status: WIP
+        phase_since: "2026-11"
+        last_run: "2026-11-17"
+        last_training: "2026-11-17"
+        registered_model:
+          name: "ml_model_task_quantity"
+          unity_catalog_path: "uc_dev_latam_mdip_01.pbf_digitalsales_datascience.ml_model_task_quantity"
+          champion_version: 4
+          challenger_version: null
+          latest_version: 4
+        functional:
+          problem_solved: >-
+            Criar um critério sistemático para determinar quantas tarefas
+            comerciais devem ser distribuídas a um vendedor ou rota em determinado
+            período, equilibrando oportunidade comercial e capacidade de execução.
+          decision_supported: >-
+            Quantas tarefas alocar a cada vendedor/período sem gerar carga
+            excessiva ou subutilização da capacidade comercial.
+          users: [Sales, Trade, DTS]
+          granularity: "Vendedor / PDV"
+          update_frequency: "Não disponível neste documento"
+          plain_explanation: >-
+            O objetivo é estimar uma quantidade de tarefas compatível com as
+            oportunidades disponíveis e com a capacidade do vendedor. A intenção
+            é evitar tanto excesso de tarefas que não possam ser executadas quanto
+            uma carga baixa que deixe oportunidades relevantes fora da rotina.
+          known_limitations: >-
+            Produto em PoC com desenvolvimento iniciado em Nov/2026. Modelo,
+            features, métricas e restrições operacionais ainda não estão
+            totalmente documentados. A integração atual com BEES é manual, o que
+            limita automação e fechamento completo do ciclo de execução.
+        technical:
+          pipeline: >-
+            Histórico de tarefas atribuídas/concluídas por PDV →
+            Suavização por Média Móvel (Rolling Mean) →
+            Quantidade de tarefas recomendada por vendedor/período
+          model: "Média Móvel (Rolling Mean) sobre o histórico de conclusões de tarefas"
+          model_diagram: "6_media_movel_tarefas.png"
+          target: "Quantidade de tarefas recomendada por vendedor/período"
+          observation_window: "Não disponível"
+          prediction_window: "Não disponível"
+          main_features: ["Não disponível neste documento"]
+          validation_strategy: "Não disponível neste documento"
+          calibration_method: "Não disponível"
+          postprocessing_rules: "Não disponível"
+          retraining_frequency: "Não disponível"
+        output_table:
+          name: "task_quantity_predictions"
+          unity_catalog_path: "uc_dev_latam_mdip_01.pbf_digitalsales_datascience.task_quantity_predictions"
+          execution_date_column: null
+          columns:
+            - {name: CustomerId, type: string, description: "Identificador do PDV", example: "100023517"}
+            - {name: SalesDistrictCode, type: string, description: "Código do distrito de vendas", example: "BR3916"}
+            - {name: cluster, type: double, description: "Cluster do PDV", example: "3.0"}
+            - {name: QtdTasks, type: int, description: "Quantidade de tarefas recomendada", example: "1"}
+            - {name: qtd_tasks_atribuidas, type: long, description: "Tarefas atribuídas no histórico", example: "2"}
+            - {name: qtd_tasks_sucesso, type: long, description: "Tarefas concluídas com sucesso no histórico", example: "0"}
+            - {name: completions_ma, type: double, description: "Média móvel de conclusões", example: "0.0"}
+            - {name: n_meses_na_media, type: long, description: "Número de meses considerados na média", example: "1"}
+            - {name: ReferenceDate, type: date, description: "Data de referência", example: "2026-10-01"}
+            - {name: PredictionDate, type: date, description: "Mês alvo da predição", example: "2026-11-01"}
+        technical_metrics:
+          model_performance: ["Não disponível neste documento — produto em PoC"]
+          coverage: "Não disponível neste documento"
+          operational_quality: "Integração manual no BEES — automação (\"Automação de Tasks na BEES\") prevista em Discovery, início Nov/2026"
+          drift_stability: "Não disponível neste documento"
+        business_value:
+          note: >-
+            Produto em PoC (início Nov/2026) — valor de negócio ainda não
+            mensurado. Referência de escopo na planilha mestre de iniciativas
+            (TK 3.1 Recomendação de Quantidade de Tarefas).
+          metrics: ["Não disponível neste documento"]
+
+  - id: sales-intelligence
+    name: Sales Intelligence Dashboard
+    code: "SIDash"
+    phase: sustain
+    operational_status: Live
+    dashboard_url: "https://adb-1341635366377882.2.azuredatabricks.net/dashboardsv3/01f16f1447981b249ee139de003e03cb/published?o=1341635366377882&view=fullscreen"
+    module: Execução
+    consuming_areas: [CRM, Trade, Digital Sales, Marketing, Sales, Growth]
+    business_owner: Leandro Ferreira (DPM)
+    technical_owner: Leandro Ferreira (DPM)
+    description: >-
+      Democratiza o acesso aos outputs de Customer Clustering e Portfolio
+      Segmentation em um dashboard de 7 abas, com uma camada de IA
+      conversacional (Genie) para consultas em linguagem natural.
+    business_objective: >-
+      Ser a principal fonte de inteligência comercial para os times de
+      vendas e marketing, consolidando os produtos analíticos do portfólio.
+    tables:
+      - "Camada consolidada de outputs dos produtos ADAN Customer Clustering e Portfolio Segmentation"
+      - "Cluster predictions (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.cust_cluster_predictions)"
+      - "Histórico predictions (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.cust_cluster_classification_history)"
+      - "Affinity Score (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.affinity_score_predictions)"
+      - "Propensity Scores (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.propensity_score_predictions)"
+      - "Quantity SCore (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.quantity_score_predictions)"
+      - "Product Code (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.product_code_mapping)"
+      - "Portfolio Prioritario Score (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.propensity_score_predictions)"
+      - "Sales ADAN predictions (uc_dev_latam_mdip_01.pbf_digitalsales_datascience.sales_adan_predictions)"
+    consumption: [Dashboard, IA Conversacional (Genie)]
+    source_docs:
+      - "Não Disponível"
+    algorithms:
+      - id: sales-intelligence-consolidation
+        name: Camada de Consolidação (Dashboard 7 abas)
+        operational_status: Live
+        phase_since: "2026-07"
+        last_run: "2026-11-17"
+        last_training: "Não aplicável (não é um modelo preditivo)"
+        functional:
+          problem_solved: >-
+            Centraliza outputs do Customer Clustering, Portfolio Segmentation
+            e componentes relacionados, reduzindo a necessidade de acesso direto
+            às tabelas técnicas e consultas SQL para análise de negócio.
+          decision_supported: >-
+            Apoia preparação de visita, análise de segmentação, leitura de
+            oportunidades de portfólio e construção de campanhas a partir de
+            uma camada visual consolidada.
+          users: [CRM, Trade Marketing, Digital Sales, Marketing, Sales, Growth]
+          granularity: "PDV / Cluster / Produto / UF, conforme a visão consumida"
+          update_frequency: "Dependente da atualização dos produtos e tabelas de origem"
+          plain_explanation: >-
+            É a camada visual do Sales ADAN que reúne resultados produzidos por
+            diferentes modelos e algoritmos em um único ambiente navegável.
+            Seu objetivo é transformar outputs técnicos em informação consumível
+            pelas áreas de negócio.
+          known_limitations: >-
+            A qualidade e atualidade das informações dependem diretamente das
+            tabelas e modelos upstream. Problemas de processamento, cobertura ou
+            atualização em CC, Portfolio Segmentation ou seus componentes podem
+            ser refletidos nas visualizações.
+        technical:
+          pipeline: "CC V2 + PS 2.1-2.4 e outputs relacionados → Camada de consolidação → 7 abas do dashboard"
+          model: "Não aplicável — camada de apresentação e consolidação, não modelo de ML"
+          target: "Não aplicável"
+          observation_window: "Não aplicável"
+          prediction_window: "Não aplicável"
+          main_features: ["Não aplicável"]
+          validation_strategy: "Não aplicável"
+          calibration_method: "Não aplicável"
+          postprocessing_rules: "Não aplicável"
+          retraining_frequency: "Não aplicável"
+        output_table:
+          name: "sales_adan_predictions (consolidação de CC, PS e Tasks)"
+          unity_catalog_path: "uc_dev_latam_mdip_01.pbf_digitalsales_datascience.sales_adan_predictions"
+          execution_date_column: ExecutionDate
+          columns:
+            - {name: CustomerId, type: string, description: "Identificador do PDV", example: "100023217"}
+            - {name: ProductCode, type: string, description: "Código do produto", example: "069_060_35_05"}
+            - {name: ProductInfo, type: string, description: "Descrição do produto", example: "ELMA-CHIPS NATURAL PRA FESTA BAG"}
+            - {name: PredictedCluster, type: int, description: "Cluster do PDV", example: "3"}
+            - {name: Persona, type: string, description: "Persona do cluster", example: "Paty Parceria"}
+            - {name: AffinityScore, type: double, description: "Score de afinidade", example: "0.50"}
+            - {name: PropensityScore, type: double, description: "Score de propensão", example: "0.46"}
+            - {name: PriorityScore, type: double, description: "Score de prioridade (Portfólio Prioritário)", example: "0.73"}
+            - {name: UnitsQuantity, type: long, description: "Quantidade recomendada (unidades)", example: "16"}
+            - {name: TasksQuantity, type: int, description: "Quantidade de tarefas recomendada", example: "3"}
+            - {name: TaskType, type: string, description: "Tipo de tarefa", example: "COVERAGE"}
+            - {name: TaskDifficulty, type: string, description: "Dificuldade da tarefa", example: "medium"}
+            - {name: RealQuantity_M1, type: long, description: "Quantidade real comprada no mês -1", example: "10"}
+            - {name: RealQuantity_M2, type: long, description: "Quantidade real comprada no mês -2", example: "8"}
+            - {name: RealQuantity_M3, type: long, description: "Quantidade real comprada no mês -3", example: "12"}
+            - {name: LastPOSSale, type: date, description: "Data da última venda no PDV", example: "2026-09-09"}
+            - {name: ActiveProduct, type: boolean, description: "Produto ativo no PDV", example: "false"}
+            - {name: PredictionDate, type: date, description: "Mês alvo da predição", example: "2026-11-01"}
+            - {name: ExecutionDate, type: date, description: "Data de execução", example: "2026-11-17"}
+        technical_metrics:
+          model_performance: ["Não aplicável — ver métricas dos modelos de origem (CC, PS)"]
+          coverage: "Não disponível neste documento"
+          operational_quality: "Acesso via Okta; 7 abas: Portfolio Simulation, Cluster Motor, Cluster Profile, Propensity Motor, Affinity Motor, Quantity Motor, Prioritary Portfolio"
+          drift_stability: "Não aplicável"
+        business_value:
+          note: "Valor medido por adoção, não por acurácia de modelo."
+          metrics: ["DAU/MAU por área consumidora", "% de campanhas criadas com segmentação", "Número de áreas consumidoras ativas"]
+
+      - id: genie-assistant
+        name: Genie — Assistente Conversacional
+        operational_status: Live
+        last_run: "Não disponível"
+        last_training: "Não aplicável"
+        functional:
+          problem_solved: >-
+            Consultar dados do Sales ADAN exige conhecimento de SQL, o que
+            limita o uso por áreas de negócio não técnicas.
+          decision_supported: "Qualquer pergunta analítica ad-hoc sobre os dados do portfólio ADAN."
+          users: [CRM, Trade, Marketing, "Growth / Analytics"]
+          granularity: "Depende da pergunta do usuário"
+          update_frequency: "Em tempo real (consulta sob demanda)"
+          plain_explanation: >-
+            É um assistente conversacional do Databricks que permite fazer
+            perguntas em linguagem natural sobre os dados disponibilizados no
+            ambiente. O Genie interpreta a pergunta, utiliza o contexto das
+            tabelas e retorna uma resposta analítica sem exigir que o usuário
+            escreva consultas SQL diretamente.
+          known_limitations: >-
+            A qualidade da resposta depende da qualidade dos dados, das tabelas
+            disponibilizadas, das relações entre elas e do contexto semântico
+            configurado para o assistente. Perguntas ambíguas, conceitos de negócio
+            não documentados ou informações fora do escopo das fontes conectadas
+            podem resultar em respostas incompletas ou exigir refinamento da
+            pergunta.
+        technical:
+          pipeline: >-
+            Pergunta em linguagem natural →
+            Genie (Databricks) →
+            Interpretação da pergunta e do contexto disponível →
+            Consulta às tabelas autorizadas no Unity Catalog →
+            Retorno do resultado ao usuário
+          model: "Genie — experiência de IA conversacional/analytics do Databricks (PT/EN)"
+          target: "Não aplicável"
+          observation_window: "Não aplicável"
+          prediction_window: "Não aplicável"
+          main_features: ["Não aplicável"]
+          validation_strategy: "Não disponível neste documento"
+          calibration_method: "Não aplicável"
+          postprocessing_rules: "Não aplicável"
+          retraining_frequency: "Não aplicável"
+        output_table:
+          name: "Não aplicável"
+          unity_catalog_path: "Não aplicável"
+          columns: []
+        technical_metrics:
+          model_performance: ["Não disponível neste documento"]
+          coverage: "Não disponível neste documento"
+          operational_quality: "Não disponível neste documento"
+          drift_stability: "Não aplicável"
+        business_value:
+          note: "Valor medido por adoção e redução de dependência de SQL para consultas ad-hoc."
+          metrics: ["Produtividade (horas economizadas)", "Adoção do dashboard"]
+
+  - id: cross-sell-intelligence
+    name: Cross-sell Dashboard
+    code: "PS 2.5 · FP-Growth"
+    phase: mvp
+    operational_status: Live
+    dashboard_url: "https://adb-1341635366377882.2.azuredatabricks.net/dashboardsv3/01f1ae22f97e118aa644ed8354945821/published?o=1341635366377882&view=fullscreen"
+    module: Produto
+    consuming_areas: [CRM, Trade, Digital Sales, Marketing, Sales, Growth]
+    business_owner: Leandro Ferreira (DPM)
+    technical_owner: Leandro Ferreira (DPM)
+    description: >-
+      Dashboard de análise de cross-sell entre marcas (market basket
+      analysis), com camada de IA conversacional (Genie) para consultas em
+      linguagem natural sobre regras de associação de compra.
+    business_objective: >-
+      Identificar quais marcas os clientes tendem a comprar em conjunto,
+      para apoiar decisões de expansão de mix e cross-sell por PDV ou por
+      estado.
+    tables:
+      - "Cross sell Score Brasil (uc_dev_latam_mdip_01.dev_pbf_digitalsales_datascience_sandbox.cross_sell_br)"
+      - "Cross sell Score UF (uc_dev_latam_mdip_01.dev_pbf_digitalsales_datascience_sandbox.cross_sell_states)"
+      - "Cross sell Score Customer (uc_dev_latam_mdip_01.dev_pbf_digitalsales_datascience_sandbox.cross_sell_customer)"
+    consumption: [Dashboard, "IA Conversacional (Genie)"]
+    source_docs:
+      - "Não Disponível"
+    algorithms:
+      - id: cross-sell-fpgrowth
+        name: Cross-sell (FP-Growth)
+        operational_status: Live
+        phase_since: "2026-08"
+        last_run: "Não disponível"
+        last_training: "Não disponível"
+        functional:
+          problem_solved: >-
+            Identifica padrões recorrentes de compra conjunta entre marcas,
+            permitindo entender quais combinações aparecem com frequência acima
+            da esperada nas cestas dos clientes.
+          decision_supported: >-
+            Quais marcas ou combinações devem ser exploradas em estratégias de
+            expansão de mix e cross-sell em nível nacional ou estadual.
+          users: [CRM, Trade, Marketing, "Growth / Analytics"]
+          granularity: "Regra de associação entre marcas (nacional ou por estado)"
+          update_frequency: "Não disponível neste documento"
+          plain_explanation: >-
+            O algoritmo analisa o histórico de compras de muitos clientes e
+            encontra padrões do tipo "clientes que compram X também costumam
+            comprar Y". O resultado representa um padrão agregado da população,
+            e não uma previsão de compra individual para determinado PDV.
+          known_limitations: >-
+            O resultado depende da janela histórica utilizada e pode não refletir
+            integralmente sazonalidades de longo prazo ou lançamentos recentes.
+            Regras calculadas sobre populações pequenas, principalmente em UFs
+            com menor número de clientes elegíveis, exigem maior cautela na
+            interpretação.
+        technical:
+          pipeline: >-
+            Histórico de pedidos (SAP/BEES) →
+            Construção das cestas de compra →
+            Market Basket Analysis →
+            FP-Growth →
+            Regras de associação →
+            Aplicação dos critérios de suporte/associação →
+            Resultados nacional e por estado →
+            cross_sell_br / cross_sell_states
+          model: "FP-Growth (Market Basket Analysis)"
+          model_diagram: "7_fpgrowth_associacao.png"
+          target: >-
+            Regras de associação antecedente(s) → consequente(s).
+            Não existe target supervisionado equivalente ao de um modelo
+            tradicional de classificação.
+          observation_window: "Janela de meses recente (não especificada em dias neste documento)"
+          prediction_window: "Não aplicável (padrão agregado, não previsão individual)"
+          main_features: ["Marca(s) antecedente(s)", "Marca(s) consequente(s)", "Estado do cliente (CustomerState), na versão por estado"]
+          validation_strategy: "Não disponível neste documento"
+          calibration_method: >-
+            min_support calculado separadamente por estado (min_support_used)
+            — compensa a diferença de volume de clientes entre estados
+          postprocessing_rules: "Filtro de lift > 1 aplicado na geração dos dados (toda regra publicada já tem associação real, não coincidência)"
+          retraining_frequency: "Não disponível"
+        output_table:
+          name: "cross_sell_br / cross_sell_states"
+          unity_catalog_path: "uc_dev_latam_mdip_01.dev_pbf_digitalsales_datascience_sandbox.cross_sell_br"
+          columns:
+            - {name: antecedents, type: string, description: "Marca(s) de partida da regra", example: "DORITOS"}
+            - {name: consequents, type: string, description: "Marca(s) sugerida(s)", example: "RUFFLES"}
+            - {name: support, type: decimal, description: "% de clientes que compram ambos, sobre o total da base", example: "0.12"}
+            - {name: confidence, type: decimal, description: "De quem compra o antecedente, % que também compra o consequente", example: "0.91"}
+            - {name: lift, type: decimal, description: "Quanto a combinação ocorre mais do que o esperado pelo acaso (>1 = associação real)", example: "1.12"}
+            - {name: kulczynski, type: decimal, description: "Confidence corrigida para reduzir viés de marcas muito populares", example: "0.78"}
+            - {name: certainty, type: decimal, description: "Quão mais confiável a regra é do que simplesmente chutar o consequente", example: "0.55"}
+            - {name: CustomerState, type: string, description: "Estado do cliente (somente em cross_sell_states)", example: "SP"}
+            - {name: n_customers, type: int, description: "Clientes daquele estado na análise (somente em cross_sell_states) — indicador de robustez", example: "4210"}
+        technical_metrics:
+          model_performance:
+            - "Exemplo real: Doritos → Ruffles, confiança 91%"
+            - "Exemplo real: Cheetos → Fandangos, lift 1,12"
+            - "Toda regra publicada tem lift > 1 (filtro de geração)"
+          coverage: "Nacional (cross_sell_br) e por estado (cross_sell_states, sujeito a min_support por UF)"
+          operational_quality: "Estados sem RAC ou com poucos clientes podem não aparecer em cross_sell_states (descartados por não atingirem base mínima)"
+          drift_stability: "Não disponível neste documento"
+        business_value:
+          note: >-
+            Regras com n_customers baixo são menos confiáveis — sinalizar isso
+            em decisões de negócio, mesmo com lift alto.
+          metrics: ["Penetração de portfólio", "Expansão de mix", "Completude de ofertas"]
+
+  - id: step-discount
+    name: Step Discount
+    code: "DB 4.1"
+    phase: discovery
+    phase_since: "2026-12"
+    operational_status: Discovery
+    module: Produto
+    consuming_areas: [Trade, Growth]
+    business_owner: Victor Vidal (PO)
+    technical_owner: Leonardo Damasio (DS Lead)
+    description: >-
+      Define a faixa de desconto ideal a ser aplicada por produto/PDV —
+      produto ainda em fase de Discovery, sem documentação técnica
+      detalhada disponível.
+    business_objective: >-
+      Calibrar o desconto ideal para maximizar conversão sem erodir margem,
+      de forma personalizada por PDV.
+    tables:
+      - "Não disponível — produto em Discovery"
+    consumption: ["Não disponível"]
+    source_docs:
+      - "Não Disponível"
+    algorithms: []
